@@ -1,0 +1,21 @@
+/* hotelsys.css — Estilos globales de HotelSys */
+/* Hotel Plaza Hostal · Yarumal, Antioquia     */
+
+:root {
+    --verde:       #2E7D32;
+    --verde-med:   #388E3C;
+    --verde-clar:  #C8E6C9;
+    --verde-fondo: #F1F8E9;
+    --gris:        #F5F5F5;
+    --gris-borde:  #BDBDBD;
+    --rojo:        #C62828;
+    --negro:       #212121;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--gris);
+    color: var(--negro);
+}
