@@ -1,2 +1,43 @@
-# HotelSys
-Sistema de Gestión Hotelera — Hotel Plaza Hostal, Yarumal, Antioquia
+# HotelSys — Sistema de Gestión Hotelera
+**Hotel Plaza Hostal · Yarumal, Antioquia**  
+Aprendiz: Robinson Damian Herrera Betancurt · SENA Ficha 3262266
+
+---
+
+## Tecnologías
+- PHP 8.1 + MySQL 8.0
+- HTML5 / CSS3 / JavaScript
+- XAMPP (entorno local Windows)
+
+---
+
+## Base de datos — Semanas 3 y 4
+Esquema MySQL con 6 tablas: clientes, habitaciones, reservas, personal, inventario, facturas.
+
+| Archivo | Descripción |
+|---|---|
+| hotelsys_schema_v1.sql | Script de creación de tablas |
+| hotelsys_seed_data.sql | Datos de prueba del hotel |
+
+---
+
+## Wireframes — Semana 5
+Diseños de interfaz previos al desarrollo. Generados con `wireframes_hotelsys.py` (Python + matplotlib).
+
+| Pantalla | Archivo | Acceso |
+|---|---|---|
+| Login | wireframes/wireframe_login.png | admin + recepcionista |
+| Dashboard | wireframes/wireframe_dashboard.png | solo admin |
+| Reservas | wireframes/wireframe_reservas.png | admin + recepcionista |
+| Habitaciones | wireframes/wireframe_habitaciones.png | admin + recepcionista |
+
+---
+
+## Estado del proyecto
+
+| Semana | Actividad | Estado |
+|---|---|---|
+| 1–2 | Configuración inicial y onboarding | ✅ Completado |
+| 3–4 | Diseño BD MySQL | ✅ Completado |
+| 5 | Wireframes de interfaz de usuario | ✅ Completado |
+| 6 | Módulo de autenticación PHP con roles | 🔄 Próximo |
