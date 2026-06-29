@@ -20,30 +20,30 @@ if (empty($email) || empty($password)) {
     exit();
 }
 
-// Buscar usuario en BD con prepared statement (previene inyección SQL)
+// Buscar usuario activo con prepared statement
 $pdo  = getConexion();
 $stmt = $pdo->prepare(
-    "SELECT id, nombre, password_hash, rol
+    "SELECT id, nombre, password, rol
      FROM usuarios
-     WHERE email = :email AND estado = 1
+     WHERE email = :email AND activo = 1
      LIMIT 1"
 );
 $stmt->execute([':email' => $email]);
 $usuario = $stmt->fetch();
 
-// Verificar contraseña con password_verify()
-if (!$usuario || !password_verify($password, $usuario['password_hash'])) {
+// Verificar contraseña
+if (!$usuario || !password_verify($password, $usuario['password'])) {
     header('Location: ../views/login.php?error=credenciales_invalidas');
     exit();
 }
 
-// Autenticación exitosa — guardar sesión
+// Sesión exitosa
 $_SESSION['usuario_id'] = $usuario['id'];
 $_SESSION['nombre']     = $usuario['nombre'];
 $_SESSION['rol']        = $usuario['rol'];
 
 // Redirigir según rol
-if ($usuario['rol'] === 'admin') {
+if ($usuario['rol'] === 'administrador') {
     header('Location: ../views/dashboard.php');
 } else {
     header('Location: ../views/reservas.php');

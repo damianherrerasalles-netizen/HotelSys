@@ -1,10 +1,10 @@
 <?php
-// views/dashboard.php — Panel ejecutivo (solo admin)
+// views/dashboard.php — Panel ejecutivo (solo administrador)
 // HotelSys — Hotel Plaza Hostal
 
 define('BASE_URL', '../');
 require_once BASE_URL . 'includes/check_auth.php';
-requerirAdmin(); // Solo admin puede ver el dashboard
+requerirAdmin();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -22,7 +22,14 @@ requerirAdmin(); // Solo admin puede ver el dashboard
         .header a  { color: #C8E6C9; font-size: 0.85rem; text-decoration: none; }
         .content   { padding: 24px; }
         .welcome   { font-size: 1rem; color: #555; margin-bottom: 20px; }
-        .kpi-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .rol-badge {
+            display: inline-block;
+            background: #C8E6C9; color: #2E7D32;
+            padding: 2px 10px; border-radius: 12px;
+            font-size: 0.8rem; font-weight: bold;
+            text-transform: capitalize;
+        }
+        .kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
         .kpi {
             background: #fff; border: 1px solid #C8E6C9;
             border-radius: 8px; padding: 20px; text-align: center;
@@ -35,30 +42,32 @@ requerirAdmin(); // Solo admin puede ver el dashboard
 <div class="header">
     <h1>HotelSys &mdash; Dashboard</h1>
     <div>
-        👤 <?= htmlspecialchars($_SESSION['nombre']) ?> &nbsp;|&nbsp;
+        <?= htmlspecialchars($_SESSION['nombre']) ?>
+        <span class="rol-badge"><?= htmlspecialchars($_SESSION['rol']) ?></span>
+        &nbsp;|&nbsp;
         <a href="../includes/logout.php">Cerrar sesión</a>
     </div>
 </div>
 <div class="content">
     <p class="welcome">
         Bienvenido, <strong><?= htmlspecialchars($_SESSION['nombre']) ?></strong>.
-        Panel de administración del Hotel Plaza Hostal.
+        Panel de administración — Hotel Plaza Hostal.
     </p>
     <div class="kpi-grid">
         <div class="kpi">
             <p>Habitaciones ocupadas</p>
             <h2>—</h2>
-            <p>Módulo Mes 3</p>
+            <p>Disponible en Mes 3</p>
         </div>
         <div class="kpi">
             <p>Reservas hoy</p>
             <h2>—</h2>
-            <p>Módulo Mes 2</p>
+            <p>Disponible en Mes 2</p>
         </div>
         <div class="kpi">
             <p>Ingresos del mes</p>
             <h2>—</h2>
-            <p>Módulo Mes 4</p>
+            <p>Disponible en Mes 4</p>
         </div>
     </div>
 </div>
