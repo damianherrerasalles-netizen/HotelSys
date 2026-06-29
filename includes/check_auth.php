@@ -20,7 +20,7 @@ function esAdmin(): bool {
 // Requerir rol administrador
 function requerirAdmin(): void {
     if (!esAdmin()) {
-        header('Location: ' . BASE_URL . 'views/reservas.php');
+        header('Location: ' . BASE_URL . 'views/acceso_denegado.php');
         exit();
     }
 }

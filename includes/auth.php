@@ -42,6 +42,7 @@ $_SESSION['usuario_id'] = $usuario['id'];
 $_SESSION['nombre']     = $usuario['nombre'];
 $_SESSION['rol']        = $usuario['rol'];
 
+
 // Redirigir según rol
 if ($usuario['rol'] === 'administrador') {
     header('Location: ../views/dashboard.php');
