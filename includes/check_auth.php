@@ -17,10 +17,15 @@ function esAdmin(): bool {
     return isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador';
 }
 
-// Requerir rol administrador
-function requerirAdmin(): void {
+// Requerir rol administrador — redirige a acceso denegado si no lo es
+// El segundo parámetro evita bucle infinito en la propia vista de acceso denegado
+function requerirAdmin(bool $mostrarDenegado = true): void {
     if (!esAdmin()) {
-        header('Location: ' . BASE_URL . 'views/acceso_denegado.php');
+        if ($mostrarDenegado) {
+            header('Location: ' . BASE_URL . 'views/acceso_denegado.php');
+        } else {
+            header('Location: ' . BASE_URL . 'views/reservas.php');
+        }
         exit();
     }
 }

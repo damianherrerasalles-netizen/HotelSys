@@ -1,9 +1,10 @@
 <?php
 // views/acceso_denegado.php
-// Se muestra cuando un recepcionista intenta entrar a rutas de admin
+// Se muestra cuando un usuario sin permisos intenta entrar a una ruta de admin
 
 define('BASE_URL', '../');
 require_once BASE_URL . 'includes/check_auth.php';
+// Solo verifica que haya sesión activa, NO requiere ser admin
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -29,7 +30,7 @@ require_once BASE_URL . 'includes/check_auth.php';
         }
         .icono { font-size: 3rem; margin-bottom: 16px; }
         h1 { color: #C62828; font-size: 1.4rem; margin-bottom: 12px; }
-        p  { color: #757575; font-size: 0.9rem; margin-bottom: 24px; }
+        p  { color: #757575; font-size: 0.9rem; margin-bottom: 24px; line-height: 1.6; }
         .btn {
             display: inline-block;
             background: #2E7D32; color: #fff;
@@ -50,12 +51,12 @@ require_once BASE_URL . 'includes/check_auth.php';
     <div class="icono">🔒</div>
     <h1>Acceso denegado</h1>
     <div class="usuario">
-        Sesión activa: <?= htmlspecialchars($_SESSION['nombre']) ?>
-        (<?= htmlspecialchars($_SESSION['rol']) ?>)
+        <?= htmlspecialchars($_SESSION['nombre']) ?>
+        &mdash; <?= htmlspecialchars($_SESSION['rol']) ?>
     </div>
     <p>No tienes permisos para acceder a esta sección.<br>
        Esta área es exclusiva del administrador del sistema.</p>
-    <a href="../views/login.php" class="btn">Volver al inicio</a>
+    <a href="reservas.php" class="btn">Volver a Reservas</a>
 </div>
 </body>
 </html>
