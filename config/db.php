@@ -2,8 +2,10 @@
 // config/db.php — Conexión PDO a MySQL
 // HotelSys — Hotel Plaza Hostal
 
+define('BASE_URL', 'http://localhost/hotelsys/');
+
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'hotelsys');
+define('DB_NAME', 'hotelsys_plaza');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
