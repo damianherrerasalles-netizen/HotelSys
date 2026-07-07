@@ -1,7 +1,6 @@
 <?php
 // views/dashboard.php — Panel ejecutivo (solo administrador)
 // HotelSys — Hotel Plaza Hostal
-
 define('BASE_URL', '../');
 require_once BASE_URL . 'includes/check_auth.php';
 requerirAdmin();
@@ -36,6 +35,18 @@ requerirAdmin();
         }
         .kpi h2 { font-size: 2rem; color: #2E7D32; margin: 8px 0 4px; }
         .kpi p  { font-size: 0.85rem; color: #757575; }
+        .kpi-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+        .kpi-link:hover .kpi {
+            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.25);
+        }
+        .kpi-link .kpi p:last-child {
+            color: #2E7D32;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -59,11 +70,13 @@ requerirAdmin();
             <h2>—</h2>
             <p>Disponible en Mes 3</p>
         </div>
-        <div class="kpi">
-            <p>Reservas hoy</p>
-            <h2>—</h2>
-            <p>Disponible en Mes 2</p>
-        </div>
+        <a href="reservas.php" class="kpi-link">
+            <div class="kpi">
+                <p>Reservas hoy</p>
+                <h2>—</h2>
+                <p>Ir al módulo de Reservas →</p>
+            </div>
+        </a>
         <div class="kpi">
             <p>Ingresos del mes</p>
             <h2>—</h2>

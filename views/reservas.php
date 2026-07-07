@@ -63,8 +63,37 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>Reservas — HotelSys</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/estilos.css">
+    <style>
+        .nav-hotelsys {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2E7D32;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+        }
+        .nav-hotelsys a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-hotelsys a:hover {
+            text-decoration: underline;
+        }
+        .nav-rol {
+            color: #E8F5E9;
+        }
+    </style>
 </head>
 <body>
+
+<nav class="nav-hotelsys">
+    <a href="<?= BASE_URL ?>views/dashboard.php">← Dashboard</a>
+    <span class="nav-rol">
+        Sesión: <strong><?= htmlspecialchars($_SESSION['rol'] ?? '') ?></strong>
+    </span>
+    <a href="<?= BASE_URL ?>views/logout.php">Cerrar sesión</a>
+</nav>
 
 <h1>Módulo de Reservas — Hotel Plaza Hostal</h1>
 
@@ -136,11 +165,12 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
             <th>Total</th>
             <th>Canal</th>
             <th>Estado</th>
+            <th>Acciones</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($reservas)): ?>
-            <tr><td colspan="11">No hay reservas activas registradas.</td></tr>
+            <tr><td colspan="12">No hay reservas activas registradas.</td></tr>
         <?php else: ?>
             <?php foreach ($reservas as $r): ?>
                 <tr>
@@ -156,11 +186,55 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
                     <td>$<?= number_format($r['total_calculado'], 0, ',', '.') ?></td>
                     <td><?= htmlspecialchars($r['canal_origen']) ?></td>
                     <td><?= htmlspecialchars($r['estado']) ?></td>
+                    <td class="acciones">
+                        <a href="<?= BASE_URL ?>views/reserva_editar.php?id=<?= (int)$r['id_reserva'] ?>">Editar</a>
+
+                        <?php if ($r['estado'] === 'Pendiente'): ?>
+                            <form class="form-accion" action="<?= BASE_URL ?>modules/reservas/reserva_actualizar_estado.php" method="POST">
+                                <input type="hidden" name="id_reserva" value="<?= (int)$r['id_reserva'] ?>">
+                                <input type="hidden" name="nuevo_estado" value="Confirmada">
+                                <button type="submit">Confirmar</button>
+                            </form>
+                        <?php elseif ($r['estado'] === 'Confirmada'): ?>
+                            <form class="form-accion" action="<?= BASE_URL ?>modules/reservas/reserva_actualizar_estado.php" method="POST">
+                                <input type="hidden" name="id_reserva" value="<?= (int)$r['id_reserva'] ?>">
+                                <input type="hidden" name="nuevo_estado" value="Activa">
+                                <button type="submit">Check-in</button>
+                            </form>
+                        <?php elseif ($r['estado'] === 'Activa'): ?>
+                            <form class="form-accion" action="<?= BASE_URL ?>modules/reservas/reserva_actualizar_estado.php" method="POST">
+                                <input type="hidden" name="id_reserva" value="<?= (int)$r['id_reserva'] ?>">
+                                <input type="hidden" name="nuevo_estado" value="Finalizada">
+                                <button type="submit">Finalizar (check-out)</button>
+                            </form>
+                        <?php endif; ?>
+
+                        <?php if (esAdmin()): ?>
+                            <form class="form-accion form-cancelar" action="<?= BASE_URL ?>modules/reservas/reserva_actualizar_estado.php" method="POST" onsubmit="return prepararCancelacion(this);">
+                                <input type="hidden" name="id_reserva" value="<?= (int)$r['id_reserva'] ?>">
+                                <input type="hidden" name="nuevo_estado" value="Cancelada">
+                                <input type="hidden" name="motivo_cancelacion" class="motivo-oculto" value="">
+                                <button type="submit" class="btn-cancelar">Cancelar</button>
+                            </form>
+                        <?php endif; ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         <?php endif; ?>
     </tbody>
 </table>
+
+<script>
+function prepararCancelacion(form) {
+    const motivo = prompt('Motivo de la cancelación (obligatorio):');
+    if (!motivo || motivo.trim() === '') {
+        alert('Debes indicar un motivo para cancelar la reserva.');
+        return false;
+    }
+    form.querySelector('.motivo-oculto').value = motivo.trim();
+    return true;
+}
+</script>
 
 </body>
 </html>
