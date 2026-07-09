@@ -63,6 +63,12 @@ if (!$habitacion) {
     volverConError('La habitación seleccionada no existe o no está activa.');
 }
 
+// --- 2.1 VALIDACIÓN CLAVE: rechazar si la habitación está en Mantenimiento ---
+// Una habitación en Mantenimiento no puede reservarse sin importar las fechas elegidas.
+if ($habitacion['estado'] === 'Mantenimiento') {
+    volverConError('La habitación seleccionada está en Mantenimiento y no puede reservarse en este momento.');
+}
+
 // --- 3. VALIDACIÓN CLAVE: solapamiento de fechas (no se puede hacer solo en SQL) ---
 // Dos rangos de fechas se cruzan si: entrada_nueva < salida_existente Y salida_nueva > entrada_existente
 $stmtSolape = $pdo->prepare(
@@ -118,7 +124,6 @@ try {
     exit();
 
 } catch (PDOException $e) {
-    // No se expone el mensaje real de la BD al usuario final
     error_log('Error al crear reserva: ' . $e->getMessage());
     volverConError('Ocurrió un error al guardar la reserva. Intenta de nuevo.');
 }

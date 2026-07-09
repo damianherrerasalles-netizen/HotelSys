@@ -1,9 +1,15 @@
 <?php
 // views/dashboard.php — Panel ejecutivo (solo administrador)
 // HotelSys — Hotel Plaza Hostal
-define('BASE_URL', '../');
-require_once BASE_URL . 'includes/check_auth.php';
+$rutaBase = '../'; // Ruta relativa SOLO para los require_once de este archivo
+require_once $rutaBase . 'config/db.php';   // Aquí db.php define BASE_URL (la URL completa)
+require_once $rutaBase . 'includes/check_auth.php';
 requerirAdmin();
+
+$conexion = getConexion();
+
+$stmtOcupacion = $conexion->query("SELECT * FROM v_ocupacion_por_tipo ORDER BY FIELD(tipo, 'Sencilla','Doble','Triple','Suite')");
+$ocupacionPorTipo = $stmtOcupacion->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -47,6 +53,26 @@ requerirAdmin();
             color: #2E7D32;
             font-weight: bold;
         }
+        .ocupacion-panel {
+            background: #fff; border: 1px solid #C8E6C9; border-radius: 8px;
+            padding: 20px; margin-top: 20px;
+        }
+        .ocupacion-panel h3 { color: #2E7D32; font-size: 16px; margin-bottom: 16px; }
+        .ocupacion-fila { margin-bottom: 14px; }
+        .ocupacion-fila-header {
+            display: flex; justify-content: space-between; font-size: 13px;
+            color: #444; margin-bottom: 4px;
+        }
+        .ocupacion-fila-header strong { color: #222; }
+        .barra-fondo {
+            width: 100%; height: 10px; background: #E8F5E9; border-radius: 6px; overflow: hidden;
+        }
+        .barra-relleno {
+            height: 100%; background: #2E7D32; border-radius: 6px;
+        }
+        .ocupacion-detalle {
+            font-size: 11px; color: #999; margin-top: 3px;
+        }
     </style>
 </head>
 <body>
@@ -65,11 +91,13 @@ requerirAdmin();
         Panel de administración — Hotel Plaza Hostal.
     </p>
     <div class="kpi-grid">
-        <div class="kpi">
-            <p>Habitaciones ocupadas</p>
-            <h2>—</h2>
-            <p>Disponible en Mes 3</p>
-        </div>
+        <a href="habitaciones.php" class="kpi-link">
+            <div class="kpi">
+                <p>Habitaciones</p>
+                <h2>—</h2>
+                <p>Ver estado en tiempo real →</p>
+            </div>
+        </a>
         <a href="reservas.php" class="kpi-link">
             <div class="kpi">
                 <p>Reservas hoy</p>
@@ -82,6 +110,27 @@ requerirAdmin();
             <h2>—</h2>
             <p>Disponible en Mes 4</p>
         </div>
+    </div>
+
+    <div class="ocupacion-panel">
+        <h3>% Ocupación por tipo de habitación</h3>
+        <?php foreach ($ocupacionPorTipo as $fila): ?>
+            <div class="ocupacion-fila">
+                <div class="ocupacion-fila-header">
+                    <span><strong><?= htmlspecialchars($fila['tipo']) ?></strong> (<?= $fila['total_habitaciones'] ?> hab.)</span>
+                    <span><strong><?= number_format($fila['pct_ocupacion'], 1) ?>%</strong></span>
+                </div>
+                <div class="barra-fondo">
+                    <div class="barra-relleno" style="width: <?= min(100, $fila['pct_ocupacion']) ?>%;"></div>
+                </div>
+                <div class="ocupacion-detalle">
+                    Disponibles: <?= $fila['disponibles'] ?> ·
+                    Ocupadas: <?= $fila['ocupadas'] ?> ·
+                    Reservadas: <?= $fila['reservadas'] ?> ·
+                    Mantenimiento: <?= $fila['en_mantenimiento'] ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </div>
 </body>

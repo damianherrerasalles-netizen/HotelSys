@@ -12,6 +12,7 @@ $mensaje = $_SESSION['reserva_mensaje'] ?? null;
 $tipoMensaje = $_SESSION['reserva_mensaje_tipo'] ?? 'error'; // 'exito' | 'error'
 unset($_SESSION['reserva_mensaje'], $_SESSION['reserva_mensaje_tipo']);
 
+
 // --- Datos para el formulario ---
 
 // Habitaciones disponibles (solo estas se pueden reservar)
