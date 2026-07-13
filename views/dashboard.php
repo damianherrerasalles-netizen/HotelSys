@@ -10,6 +10,10 @@ $conexion = getConexion();
 
 $stmtOcupacion = $conexion->query("SELECT * FROM v_ocupacion_por_tipo ORDER BY FIELD(tipo, 'Sencilla','Doble','Triple','Suite')");
 $ocupacionPorTipo = $stmtOcupacion->fetchAll(PDO::FETCH_ASSOC);
+
+// Total de clientes activos, para la tarjeta del modulo de Clientes
+$stmtClientes = $conexion->query("SELECT COUNT(*) AS total FROM clientes WHERE activo = 1");
+$totalClientesActivos = $stmtClientes->fetch(PDO::FETCH_ASSOC)['total'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -34,7 +38,7 @@ $ocupacionPorTipo = $stmtOcupacion->fetchAll(PDO::FETCH_ASSOC);
             font-size: 0.8rem; font-weight: bold;
             text-transform: capitalize;
         }
-        .kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
         .kpi {
             background: #fff; border: 1px solid #C8E6C9;
             border-radius: 8px; padding: 20px; text-align: center;
@@ -103,6 +107,13 @@ $ocupacionPorTipo = $stmtOcupacion->fetchAll(PDO::FETCH_ASSOC);
                 <p>Reservas hoy</p>
                 <h2>—</h2>
                 <p>Ir al módulo de Reservas →</p>
+            </div>
+        </a>
+        <a href="clientes.php" class="kpi-link">
+            <div class="kpi">
+                <p>Clientes activos</p>
+                <h2><?= (int)$totalClientesActivos ?></h2>
+                <p>Ir al módulo de Clientes →</p>
             </div>
         </a>
         <div class="kpi">

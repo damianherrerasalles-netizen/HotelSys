@@ -84,6 +84,24 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
         .nav-rol {
             color: #E8F5E9;
         }
+        .campo-cliente-busqueda {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .campo-cliente-busqueda input[type="text"] {
+            flex: 1;
+        }
+        .enlace-nuevo-cliente {
+            white-space: nowrap;
+            font-size: 13px;
+        }
+        .aviso-cliente-no-encontrado {
+            font-size: 12px;
+            color: #B71C1C;
+            display: none;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -105,17 +123,26 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
 <?php endif; ?>
 
 <h2>Nueva reserva</h2>
-<form action="<?= BASE_URL ?>modules/reservas/reserva_procesar.php" method="POST">
+<form action="<?= BASE_URL ?>modules/reservas/reserva_procesar.php" method="POST" id="form-nueva-reserva">
 
-    <label for="id_cliente">Cliente:</label>
-    <select name="id_cliente" id="id_cliente" required>
-        <option value="">-- Seleccione un cliente --</option>
+    <label for="buscar_cliente">Cliente:</label>
+    <div class="campo-cliente-busqueda">
+        <input type="text" id="buscar_cliente" placeholder="Escribe nombre o documento..."
+               list="lista_clientes" autocomplete="off" required>
+        <a href="<?= BASE_URL ?>views/cliente_form.php" target="_blank" class="enlace-nuevo-cliente">
+            + Nuevo cliente
+        </a>
+    </div>
+    <datalist id="lista_clientes">
         <?php foreach ($clientes as $c): ?>
-            <option value="<?= (int)$c['id_cliente'] ?>">
-                <?= htmlspecialchars($c['nombres'] . ' ' . $c['apellidos'] . ' — ' . $c['num_documento']) ?>
-            </option>
+            <option data-id="<?= (int)$c['id_cliente'] ?>"
+                    value="<?= htmlspecialchars($c['nombres'] . ' ' . $c['apellidos'] . ' — ' . $c['num_documento']) ?>">
         <?php endforeach; ?>
-    </select>
+    </datalist>
+    <div id="aviso_cliente_no_encontrado" class="aviso-cliente-no-encontrado">
+        No se encontro ese cliente en la lista. Selecciona una opcion sugerida o registra un cliente nuevo.
+    </div>
+    <input type="hidden" name="id_cliente" id="id_cliente" required>
 
     <label for="id_habitacion">Habitación disponible:</label>
     <select name="id_habitacion" id="id_habitacion" required>
@@ -235,6 +262,43 @@ function prepararCancelacion(form) {
     form.querySelector('.motivo-oculto').value = motivo.trim();
     return true;
 }
+
+// --- Autocompletado de cliente: mapea el texto elegido del datalist a su id_cliente real ---
+(function () {
+    const inputBusqueda = document.getElementById('buscar_cliente');
+    const inputIdCliente = document.getElementById('id_cliente');
+    const datalist = document.getElementById('lista_clientes');
+    const aviso = document.getElementById('aviso_cliente_no_encontrado');
+    const formulario = document.getElementById('form-nueva-reserva');
+
+    function buscarIdPorTexto(texto) {
+        const opciones = datalist.querySelectorAll('option');
+        for (const opcion of opciones) {
+            if (opcion.value === texto) {
+                return opcion.getAttribute('data-id');
+            }
+        }
+        return null;
+    }
+
+    inputBusqueda.addEventListener('input', function () {
+        const id = buscarIdPorTexto(this.value);
+        if (id) {
+            inputIdCliente.value = id;
+            aviso.style.display = 'none';
+        } else {
+            inputIdCliente.value = '';
+        }
+    });
+
+    formulario.addEventListener('submit', function (e) {
+        if (!inputIdCliente.value) {
+            e.preventDefault();
+            aviso.style.display = 'block';
+            inputBusqueda.focus();
+        }
+    });
+})();
 </script>
 
 </body>
