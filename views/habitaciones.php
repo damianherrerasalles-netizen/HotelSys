@@ -222,9 +222,14 @@ function colorEstadoHabitacion($estado) {
 </head>
 <body>
 
-    <div class="header">
+  <div class="header">
         <h1>🏨 Habitaciones - HotelSys</h1>
-        <a href="<?= BASE_URL ?>views/dashboard.php" class="btn-volver">← Volver al Dashboard</a>
+        <div>
+            <a href="<?= BASE_URL ?>views/dashboard.php" class="btn-volver">← Dashboard</a>
+            <a href="<?= BASE_URL ?>views/reservas.php" class="btn-volver" style="margin-left:8px;">Reservas</a>
+            <a href="<?= BASE_URL ?>views/clientes.php" class="btn-volver" style="margin-left:8px;">Clientes</a>
+            <a href="<?= BASE_URL ?>views/personal.php" class="btn-volver" style="margin-left:8px;">Personal</a>
+        </div>
     </div>
 
     <form method="get" action="habitaciones.php" class="filtros">

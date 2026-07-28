@@ -78,6 +78,28 @@ unset($_SESSION['cliente_mensaje'], $_SESSION['cliente_mensaje_tipo']);
 </head>
 <body>
 <div class="contenedor">
+    <nav class="nav-hotelsys" style="display:flex; justify-content:space-between; align-items:center; background-color:#2E7D32; padding:10px 20px; margin-bottom:15px;">
+        <nav class="nav-hotelsys" style="display:flex; justify-content:space-between; align-items:center; background-color:#2E7D32; padding:10px 20px; margin-bottom:15px;">
+    <div>
+        <a href="<?php echo BASE_URL; ?>views/dashboard.php" style="color:#fff; text-decoration:none; font-weight:bold;">← Dashboard</a>
+        &nbsp;|&nbsp;
+        <a href="<?php echo BASE_URL; ?>views/reservas.php" style="color:#fff; text-decoration:none; font-weight:bold;">Reservas</a>
+        &nbsp;|&nbsp;
+        <a href="<?php echo BASE_URL; ?>views/habitaciones.php" style="color:#fff; text-decoration:none; font-weight:bold;">Habitaciones</a>
+        &nbsp;|&nbsp;
+        <a href="<?php echo BASE_URL; ?>views/personal.php" style="color:#fff; text-decoration:none; font-weight:bold;">Personal</a>
+    </div>
+    <span style="color:#E8F5E9;">
+        Sesión: <strong><?php echo htmlspecialchars($_SESSION['rol'] ?? ''); ?></strong>
+    </span>
+    <a href="<?php echo BASE_URL; ?>views/logout.php" style="color:#fff; text-decoration:none; font-weight:bold;">Cerrar sesión</a>
+</nav>
+        <span style="color:#E8F5E9;">
+            Sesión: <strong><?php echo htmlspecialchars($_SESSION['rol'] ?? ''); ?></strong>
+        </span>
+        <a href="<?php echo BASE_URL; ?>views/logout.php" style="color:#fff; text-decoration:none; font-weight:bold;">Cerrar sesión</a>
+    </nav>
+
     <h1>Clientes</h1>
 
     <?php if ($mensaje): ?>

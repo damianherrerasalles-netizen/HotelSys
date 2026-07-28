@@ -107,7 +107,17 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
 <body>
 
 <nav class="nav-hotelsys">
-    <a href="<?= BASE_URL ?>views/dashboard.php">← Dashboard</a>
+    <div>
+        <a href="<?= BASE_URL ?>views/dashboard.php">← Dashboard</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/reservas.php">Reservas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/clientes.php">Clientes</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/habitaciones.php">Habitaciones</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/personal.php">Personal</a>
+    </div>
     <span class="nav-rol">
         Sesión: <strong><?= htmlspecialchars($_SESSION['rol'] ?? '') ?></strong>
     </span>

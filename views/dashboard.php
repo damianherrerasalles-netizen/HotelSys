@@ -2,8 +2,8 @@
 // views/dashboard.php — Panel ejecutivo (solo administrador)
 // HotelSys — Hotel Plaza Hostal
 $rutaBase = '../'; // Ruta relativa SOLO para los require_once de este archivo
-require_once $rutaBase . 'config/db.php';   // Aquí db.php define BASE_URL (la URL completa)
-require_once $rutaBase . 'includes/check_auth.php';
+require_once '../config/db.php';
+require_once '../includes/check_auth.php';
 requerirAdmin();
 
 $conexion = getConexion();
@@ -14,7 +14,12 @@ $ocupacionPorTipo = $stmtOcupacion->fetchAll(PDO::FETCH_ASSOC);
 // Total de clientes activos, para la tarjeta del modulo de Clientes
 $stmtClientes = $conexion->query("SELECT COUNT(*) AS total FROM clientes WHERE activo = 1");
 $totalClientesActivos = $stmtClientes->fetch(PDO::FETCH_ASSOC)['total'];
+
+// Total de personal activo, para la tarjeta del modulo de Personal
+$stmtPersonal = $conexion->query("SELECT COUNT(*) AS total FROM personal WHERE activo = 1");
+$totalPersonalActivo = $stmtPersonal->fetch(PDO::FETCH_ASSOC)['total'];
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -114,6 +119,13 @@ $totalClientesActivos = $stmtClientes->fetch(PDO::FETCH_ASSOC)['total'];
                 <p>Clientes activos</p>
                 <h2><?= (int)$totalClientesActivos ?></h2>
                 <p>Ir al módulo de Clientes →</p>
+            </div>
+        </a>
+        <a href="personal.php" class="kpi-link">
+            <div class="kpi">
+                <p>Personal activo</p>
+                <h2><?= (int)$totalPersonalActivo ?></h2>
+                <p>Ir al módulo de Personal →</p>
             </div>
         </a>
         <div class="kpi">
