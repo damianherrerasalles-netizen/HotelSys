@@ -82,4 +82,42 @@ Sistema de login con control de roles implementado en PHP 8.1.
 | 3–4 | Diseño BD MySQL | ✅ Completado |
 | 5 | Wireframes de interfaz de usuario | ✅ Completado |
 | 6 | Módulo de autenticación PHP con roles | ✅ Completado |
-| 7 | Módulo de Reservas | 🔄 Próximo |
+| 7 | Módulo de Reservas | ✅ Completado |
+| 11 | Módulo de Inventario con alertas de stock crítico | 🔄 En curso — Día 1 |
+
+---
+
+## Inventario — Semana 11 (Actividad VIII del cronograma)
+
+El modelo de datos del inventario (tabla `inventario` + vista `v_stock_critico`)
+ya existía desde la Semana 4. El Día 1 de esta semana auditó ese diseño contra
+las respuestas reales del hostal (formulario de levantamiento, P10–P11) y
+desarrolló el módulo PHP completo sobre esa base.
+
+### Hallazgo de la auditoría
+La categoría **Bebidas** (insumos de minibar: agua, gaseosa, café) estaba en las
+respuestas del hostal pero no en el ENUM original de `categoria`. Se agregó vía
+`hotelsys_migration_semana11_inventario.sql`, junto con 3 ítems de ejemplo.
+
+### Archivos del módulo de inventario
+
+| Archivo | Descripción |
+|---|---|
+| `hotelsys_migration_semana11_inventario.sql` | Migración: agrega categoría "Bebidas" + datos de ejemplo |
+| `views/inventario.php` | Listado con filtros, indicador de stock crítico y aviso superior |
+| `views/inventario_form.php` | Formulario de alta/edición de insumos (solo admin) |
+| `modules/inventario/inventario_procesar.php` | Procesa alta/edición con validaciones |
+| `modules/inventario/inventario_estado.php` | Activa/desactiva un insumo (baja lógica) |
+
+### Widget de alertas en el Dashboard
+Se agregó una tarjeta KPI en `views/dashboard.php` que muestra el número de
+insumos en stock crítico en tiempo real y enlaza al listado filtrado —
+respondiendo a la Prioridad 2 del Dashboard definida en el levantamiento
+de información (P15).
+
+### Corrección aplicada de paso
+`views/personal.php` enlazaba a `assets/css/style.css`, un archivo que nunca
+existió (el real es `assets/css/estilos.css`), por lo que sus estilos de
+botones y contenedor no cargaban. Se corrigió la referencia y se agregaron a
+`estilos.css` las clases genéricas (`.contenedor`, `.btn`, `.btn-primario`,
+etc.) que esa vista y la nueva de inventario usan.

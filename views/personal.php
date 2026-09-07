@@ -64,7 +64,7 @@ unset($_SESSION['personal_mensaje'], $_SESSION['personal_mensaje_tipo']);
 <head>
     <meta charset="UTF-8">
     <title>Personal - HotelSys</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/estilos.css">
     <style>
         .personal-grid {
             display: grid;

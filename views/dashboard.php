@@ -18,6 +18,11 @@ $totalClientesActivos = $stmtClientes->fetch(PDO::FETCH_ASSOC)['total'];
 // Total de personal activo, para la tarjeta del modulo de Personal
 $stmtPersonal = $conexion->query("SELECT COUNT(*) AS total FROM personal WHERE activo = 1");
 $totalPersonalActivo = $stmtPersonal->fetch(PDO::FETCH_ASSOC)['total'];
+
+// Insumos en stock crítico, para el widget de alertas — Semana 11
+// (misma regla que la vista v_stock_critico: stock_actual <= stock_minimo)
+$stmtCriticos = $conexion->query("SELECT COUNT(*) AS total FROM inventario WHERE stock_actual <= stock_minimo AND activo = 1");
+$totalStockCritico = $stmtCriticos->fetch(PDO::FETCH_ASSOC)['total'];
 ?>
 
 <!DOCTYPE html>
@@ -60,6 +65,21 @@ $totalPersonalActivo = $stmtPersonal->fetch(PDO::FETCH_ASSOC)['total'];
         }
         .kpi-link .kpi p:last-child {
             color: #2E7D32;
+            font-weight: bold;
+        }
+        .kpi.kpi-alerta {
+            border: 1px solid #C62828;
+            background: #FFFBFB;
+        }
+        .kpi.kpi-alerta h2 {
+            color: #C62828;
+        }
+        .kpi-link.kpi-link-alerta .kpi-link .kpi p:last-child { color: #C62828; }
+        .kpi-link.kpi-link-alerta:hover .kpi {
+            box-shadow: 0 2px 8px rgba(198, 40, 40, 0.25);
+        }
+        .kpi-link.kpi-link-alerta .kpi p:last-child {
+            color: #C62828;
             font-weight: bold;
         }
         .ocupacion-panel {
@@ -126,6 +146,13 @@ $totalPersonalActivo = $stmtPersonal->fetch(PDO::FETCH_ASSOC)['total'];
                 <p>Personal activo</p>
                 <h2><?= (int)$totalPersonalActivo ?></h2>
                 <p>Ir al módulo de Personal →</p>
+            </div>
+        </a>
+        <a href="inventario.php?criticos=1" class="kpi-link">
+            <div class="kpi <?= $totalStockCritico > 0 ? 'kpi-alerta' : '' ?>">
+                <p>Insumos en stock crítico</p>
+                <h2><?= (int)$totalStockCritico ?></h2>
+                <p>Ir al módulo de Inventario →</p>
             </div>
         </a>
         <div class="kpi">
