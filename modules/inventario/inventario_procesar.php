@@ -4,6 +4,7 @@
 $rutaBase = '../../';
 require_once $rutaBase . 'config/db.php';
 require_once $rutaBase . 'includes/check_auth.php';
+require_once $rutaBase . 'includes/validaciones_inventario.php'; // Semana 12 Día 4
 requerirAdmin(); // Solo admin puede crear/editar/desactivar inventario
 
 $pdo = getConexion();
@@ -34,13 +35,19 @@ $observaciones = trim($_POST['observaciones'] ?? '');
 $urlFormulario = BASE_URL . 'views/inventario_form.php' . ($esEdicion ? '?id=' . $idItem : '');
 
 // ---- Validación de campos obligatorios ----
+// Semana 12: el stock_actual ya no se edita desde este formulario cuando es
+// una edición — solo se pide como "stock inicial" al dar de alta un insumo
+// nuevo. Los cambios posteriores de stock quedan a cargo del Kardex
+// (movimientos_inventario), ver inventario_kardex.php.
 $camposObligatorios = [
     'nombre_item' => $nombreItem,
     'categoria' => $categoria,
     'unidad_medida' => $unidadMedida,
-    'stock_actual' => $stockActual,
     'stock_minimo' => $stockMinimo,
 ];
+if (!$esEdicion) {
+    $camposObligatorios['stock_actual'] = $stockActual;
+}
 
 foreach ($camposObligatorios as $campo => $valor) {
     if ($valor === '') {
@@ -51,37 +58,89 @@ foreach ($camposObligatorios as $campo => $valor) {
     }
 }
 
+// Validación de nombre (longitud) — la obligatoriedad ya se verificó arriba
+$errorNombre = validarNombreInsumo($nombreItem);
+if ($errorNombre !== null) {
+    $_SESSION['inventario_mensaje'] = $errorNombre;
+    $_SESSION['inventario_mensaje_tipo'] = 'error';
+    header('Location: ' . $urlFormulario);
+    exit;
+}
+
 // Validación de categoría contra valores permitidos (defensa adicional, por si
 // alguien manipula el <select> del formulario o envía el POST directamente)
-$categoriasValidas = ['Lencería', 'Aseo', 'Amenidades', 'Bebidas', 'Mantenimiento', 'Oficina', 'Alimentos', 'Otro'];
-
-if (!in_array($categoria, $categoriasValidas, true)) {
-    $_SESSION['inventario_mensaje'] = 'Categoría no válida.';
+$errorCategoria = validarCategoriaInventario($categoria);
+if ($errorCategoria !== null) {
+    $_SESSION['inventario_mensaje'] = $errorCategoria;
     $_SESSION['inventario_mensaje_tipo'] = 'error';
     header('Location: ' . $urlFormulario);
     exit;
 }
 
 // Validación numérica de stock (no negativos)
-if (!ctype_digit($stockActual) || !ctype_digit($stockMinimo)) {
-    $_SESSION['inventario_mensaje'] = 'El stock actual y el stock mínimo deben ser números enteros positivos.';
+$errorStockMinimo = validarEnteroNoNegativo($stockMinimo);
+if ($errorStockMinimo !== null) {
+    $_SESSION['inventario_mensaje'] = 'Stock mínimo: ' . $errorStockMinimo;
     $_SESSION['inventario_mensaje_tipo'] = 'error';
     header('Location: ' . $urlFormulario);
     exit;
 }
-$stockActual = (int) $stockActual;
 $stockMinimo = (int) $stockMinimo;
 
+if (!$esEdicion) {
+    $errorStockActual = validarEnteroNoNegativo($stockActual);
+    if ($errorStockActual !== null) {
+        $_SESSION['inventario_mensaje'] = 'Stock inicial: ' . $errorStockActual;
+        $_SESSION['inventario_mensaje_tipo'] = 'error';
+        header('Location: ' . $urlFormulario);
+        exit;
+    }
+    $stockActual = (int) $stockActual;
+}
+
 // Precio unitario: opcional, por defecto 0.00
-if ($precioUnitario === '') {
-    $precioUnitario = 0.00;
-} elseif (!is_numeric($precioUnitario) || (float) $precioUnitario < 0) {
-    $_SESSION['inventario_mensaje'] = 'El precio unitario no es válido.';
+$errorPrecio = validarNumeroNoNegativo($precioUnitario);
+if ($errorPrecio !== null) {
+    $_SESSION['inventario_mensaje'] = 'Precio unitario: ' . $errorPrecio;
     $_SESSION['inventario_mensaje_tipo'] = 'error';
     header('Location: ' . $urlFormulario);
     exit;
-} else {
-    $precioUnitario = (float) $precioUnitario;
+}
+$precioUnitario = $precioUnitario === '' ? 0.00 : (float) $precioUnitario;
+
+// Teléfono del proveedor: opcional, solo dígitos si se envía
+$errorTelefono = validarTelefonoProveedor($telefonoProveedor);
+if ($errorTelefono !== null) {
+    $_SESSION['inventario_mensaje'] = $errorTelefono;
+    $_SESSION['inventario_mensaje_tipo'] = 'error';
+    header('Location: ' . $urlFormulario);
+    exit;
+}
+
+// Observaciones: opcional, respeta el límite de la columna VARCHAR(255)
+$errorObservaciones = validarObservaciones($observaciones);
+if ($errorObservaciones !== null) {
+    $_SESSION['inventario_mensaje'] = $errorObservaciones;
+    $_SESSION['inventario_mensaje_tipo'] = 'error';
+    header('Location: ' . $urlFormulario);
+    exit;
+}
+
+// Nombre duplicado: no permitir dos insumos activos con el mismo nombre
+// (comparación insensible a mayúsculas/minúsculas) — Semana 12 Día 4
+$sqlDuplicado = "SELECT id_item FROM inventario WHERE LOWER(nombre_item) = LOWER(:nombre) AND activo = 1";
+$paramsDuplicado = [':nombre' => $nombreItem];
+if ($esEdicion) {
+    $sqlDuplicado .= " AND id_item != :id_actual";
+    $paramsDuplicado[':id_actual'] = $idItem;
+}
+$stmtDuplicado = $pdo->prepare($sqlDuplicado);
+$stmtDuplicado->execute($paramsDuplicado);
+if ($stmtDuplicado->fetch()) {
+    $_SESSION['inventario_mensaje'] = 'Ya existe un insumo activo con ese nombre.';
+    $_SESSION['inventario_mensaje_tipo'] = 'error';
+    header('Location: ' . $urlFormulario);
+    exit;
 }
 
 // ---- Normalización de campos opcionales (vacío -> NULL) ----
@@ -92,11 +151,14 @@ $observaciones = $observaciones !== '' ? $observaciones : null;
 
 try {
     if ($esEdicion) {
+        // Nota Semana 12: stock_actual se excluye deliberadamente de este UPDATE.
+        // Aunque el campo del formulario está deshabilitado, esta es la garantía
+        // real de que nadie puede alterar el stock por esta vía — el único camino
+        // es registrar un movimiento (ver modules/inventario/movimiento_registrar.php).
         $sql = "UPDATE inventario SET
                     nombre_item = :nombre_item,
                     categoria = :categoria,
                     unidad_medida = :unidad_medida,
-                    stock_actual = :stock_actual,
                     stock_minimo = :stock_minimo,
                     precio_unitario = :precio_unitario,
                     proveedor = :proveedor,
@@ -110,7 +172,6 @@ try {
             ':nombre_item' => $nombreItem,
             ':categoria' => $categoria,
             ':unidad_medida' => $unidadMedida,
-            ':stock_actual' => $stockActual,
             ':stock_minimo' => $stockMinimo,
             ':precio_unitario' => $precioUnitario,
             ':proveedor' => $proveedor,

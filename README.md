@@ -83,7 +83,7 @@ Sistema de login con control de roles implementado en PHP 8.1.
 | 5 | Wireframes de interfaz de usuario | ✅ Completado |
 | 6 | Módulo de autenticación PHP con roles | ✅ Completado |
 | 7 | Módulo de Reservas | ✅ Completado |
-| 11 | Módulo de Inventario con alertas de stock crítico | 🔄 En curso — Día 1 |
+| 11–12 | Módulo de Inventario con alertas de stock crítico (Kardex, alertas automáticas, reporte exportable, validaciones) | ✅ Completado |
 
 ---
 
@@ -121,3 +121,92 @@ existió (el real es `assets/css/estilos.css`), por lo que sus estilos de
 botones y contenedor no cargaban. Se corrigió la referencia y se agregaron a
 `estilos.css` las clases genéricas (`.contenedor`, `.btn`, `.btn-primario`,
 etc.) que esa vista y la nueva de inventario usan.
+
+### Verificación funcional — Días 2 a 4
+Con el módulo ya construido (Día 1), el resto de la semana se dedicó a probarlo
+sobre datos reales del Hotel Plaza Hostal:
+
+- **Migración y estructura (Día 2):** se ejecutó `hotelsys_migration_semana11_inventario.sql`
+  en phpMyAdmin y se verificó con `DESCRIBE inventario` y `SELECT * FROM v_stock_critico`
+  que la categoría Bebidas y los 3 insumos de ejemplo quedaron correctamente cargados.
+- **Filtros del listado (Día 3):** se probó `views/inventario.php` sin filtros (15 insumos,
+  6 críticos), con búsqueda por proveedor ("Suministros Yarumal" → 5 resultados) y con
+  filtro por categoría ("Oficina" → 1 resultado), confirmando que el indicador de stock
+  crítico se recalcula correctamente en cada caso.
+- **CRUD y Dashboard (Día 4):** se probó el alta de un insumo nuevo, la edición de uno
+  existente (cambiando su stock mínimo para forzar el estado crítico), y la
+  activación/desactivación (baja lógica) de otro insumo — los tres a través del formulario
+  y el procesador construidos en el Día 1. Se verificó además que el conteo de la tarjeta
+  de stock crítico del Dashboard se mantiene sincronizado con estos cambios.
+
+Evidencia detallada de cada día en la bitácora de la Semana 11 (`HotelSys_Semana11.pdf` y
+`Evidencia_Semana11_Dia1..4_HotelSys.pdf`).
+
+---
+
+## Inventario — Semana 12 (continuación de la Actividad VIII)
+
+El cronograma asignó 2 semanas a la Actividad VIII, pero el desarrollo inicial
+(Semana 11) se completó en 1. En vez de adelantar la Actividad IX, la Semana
+12 profundizó el módulo de Inventario en 4 frentes, día por día.
+
+### Día 1 — Historial de movimientos (Kardex)
+Hasta la Semana 11, el formulario de edición permitía cambiar `stock_actual`
+directamente, sin dejar rastro de por qué cambió. Ahora todo cambio de stock
+(fuera del alta inicial de un insumo) debe registrarse como un movimiento de
+entrada o salida.
+
+| Archivo | Descripción |
+|---|---|
+| `hotelsys_migration_semana12_kardex.sql` | Crea `movimientos_inventario` (entrada/salida, motivo, cantidad, stock resultante, usuario, fecha) |
+| `modules/inventario/movimiento_registrar.php` | Registra un movimiento dentro de una transacción con `SELECT ... FOR UPDATE`, evita dejar el stock en negativo |
+| `views/inventario_kardex.php` | Página por insumo: stock actual, formulario de movimiento y los últimos 15 movimientos |
+
+`inventario_form.php` deshabilita el campo de stock al editar (con enlace al
+Kardex), e `inventario_procesar.php` excluye `stock_actual` de su `UPDATE` —
+la única forma de cambiar el stock de un insumo existente es registrando un
+movimiento.
+
+### Día 2 — Alertas automáticas de stock crítico
+Acerca el sistema al requerimiento original del hostal: un mecanismo que
+compare stock actual vs. mínimo y genere alertas (P10–P11 del levantamiento
+de información).
+
+| Archivo | Descripción |
+|---|---|
+| `hotelsys_migration_semana12_dia2_alertas.sql` | Crea `alertas_inventario` (estado, stock y mínimo al generar, fechas, atendida por) |
+| `modules/inventario/alerta_atender.php` | Marca una alerta abierta como atendida manualmente |
+| `views/alertas_inventario.php` | Alertas abiertas (con botón "Marcar atendida") e historial de las últimas cerradas |
+
+Dentro de la misma transacción de `movimiento_registrar.php`: si el stock
+resultante queda en o bajo el mínimo y no hay ya una alerta abierta para ese
+insumo, se crea una; si el stock se recupera por encima del mínimo, la alerta
+abierta se cierra sola como "resuelta automáticamente".
+
+### Día 3 — Reporte exportable de inventario
+| Archivo | Descripción |
+|---|---|
+| `modules/inventario/inventario_exportar.php` | Genera un CSV (con BOM UTF-8, para que tildes y Ñ se vean bien en Excel) respetando los filtros activos de la pantalla |
+
+Botón "Exportar CSV" en `views/inventario.php`, junto a "+ Nuevo Insumo".
+Columnas: nombre, categoría, unidad, stock actual, stock mínimo, estado de
+stock, precio unitario, proveedor, teléfono, última compra y estado.
+
+### Día 4 — Validaciones reforzadas y pruebas
+| Archivo | Descripción |
+|---|---|
+| `includes/validaciones_inventario.php` | Funciones reutilizables: nombre, categoría, enteros/decimales no negativos, teléfono de proveedor y longitud de observaciones |
+| `tests/test_validaciones_inventario.php` | Script de pruebas por consola (`php tests/test_validaciones_inventario.php`) — 28 casos válidos e inválidos, todos en PASS |
+
+`inventario_procesar.php` y `movimiento_registrar.php` ahora comparten estas
+funciones; además se rechaza un insumo con el mismo nombre que otro insumo
+activo ya existente.
+
+### Día 5 — Pruebas integrales y cierre
+Recorrido completo verificado en el navegador con un insumo de prueba: alta →
+salida que genera una alerta automática → confirmación en Alertas de
+Inventario → entrada que la cierra sola → confirmación como "auto-resuelta" →
+edición con el stock bloqueado → rechazo por nombre duplicado → exportación a
+CSV — cerrando la Actividad VIII a través de las Semanas 11 y 12.
+
+Evidencia detallada de cada día en `Evidencia_Semana12_Dia1..5_HotelSys.pdf`.

@@ -147,12 +147,16 @@ unset($_SESSION['inventario_mensaje'], $_SESSION['inventario_mensaje_tipo']);
         <div class="aviso-critico">
             <strong>&#9888; <?= $totalCriticos ?> insumo(s)</strong> en stock crítico (por debajo del mínimo).
             <a href="?criticos=1" style="color:#B71C1C; font-weight:bold;">Ver solo críticos &rarr;</a>
+            &nbsp;|&nbsp;
+            <a href="alertas_inventario.php" style="color:#B71C1C; font-weight:bold;">Ver alertas registradas &rarr;</a>
         </div>
     <?php endif; ?>
 
     <div class="barra-superior">
         <?php if (esAdmin()): ?>
             <a href="inventario_form.php" class="btn btn-primario">+ Nuevo Insumo</a>
+            <a href="<?= BASE_URL ?>modules/inventario/inventario_exportar.php<?= $_SERVER['QUERY_STRING'] !== '' ? '?' . htmlspecialchars($_SERVER['QUERY_STRING']) : '' ?>"
+               class="btn btn-secundario">Exportar CSV</a>
         <?php endif; ?>
     </div>
 
@@ -228,6 +232,7 @@ unset($_SESSION['inventario_mensaje'], $_SESSION['inventario_mensaje_tipo']);
                 <?php if (esAdmin()): ?>
                     <div class="acciones-item">
                         <a href="inventario_form.php?id=<?= $item['id_item'] ?>" class="btn-secundario">Editar</a>
+                        <a href="inventario_kardex.php?id=<?= $item['id_item'] ?>" class="btn-secundario">Ver historial</a>
                         <?php if ($item['activo'] == 1): ?>
                             <a href="<?= BASE_URL ?>modules/inventario/inventario_estado.php?id=<?= $item['id_item'] ?>&accion=desactivar"
                                class="btn-peligro"

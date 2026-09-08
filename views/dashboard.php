@@ -23,6 +23,10 @@ $totalPersonalActivo = $stmtPersonal->fetch(PDO::FETCH_ASSOC)['total'];
 // (misma regla que la vista v_stock_critico: stock_actual <= stock_minimo)
 $stmtCriticos = $conexion->query("SELECT COUNT(*) AS total FROM inventario WHERE stock_actual <= stock_minimo AND activo = 1");
 $totalStockCritico = $stmtCriticos->fetch(PDO::FETCH_ASSOC)['total'];
+
+// Alertas de inventario generadas automáticamente y aún abiertas — Semana 12 Día 2
+$stmtAlertas = $conexion->query("SELECT COUNT(*) AS total FROM alertas_inventario WHERE estado = 'abierta'");
+$totalAlertasAbiertas = $stmtAlertas->fetch(PDO::FETCH_ASSOC)['total'];
 ?>
 
 <!DOCTYPE html>
@@ -153,6 +157,13 @@ $totalStockCritico = $stmtCriticos->fetch(PDO::FETCH_ASSOC)['total'];
                 <p>Insumos en stock crítico</p>
                 <h2><?= (int)$totalStockCritico ?></h2>
                 <p>Ir al módulo de Inventario →</p>
+            </div>
+        </a>
+        <a href="alertas_inventario.php" class="kpi-link">
+            <div class="kpi <?= $totalAlertasAbiertas > 0 ? 'kpi-alerta' : '' ?>">
+                <p>Alertas de inventario abiertas</p>
+                <h2><?= (int)$totalAlertasAbiertas ?></h2>
+                <p>Ver alertas de stock crítico →</p>
             </div>
         </a>
         <div class="kpi">

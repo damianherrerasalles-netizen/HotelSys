@@ -141,9 +141,20 @@ $unidadesSugeridas = ['unidad', 'litro', 'rollo', 'paquete', 'kit', 'caja'];
         <div class="seccion-titulo">Control de stock</div>
         <div class="dos-columnas">
             <div class="fila">
-                <label>Stock actual <span class="obligatorio">*</span></label>
-                <input type="number" name="stock_actual" required min="0" step="1"
-                       value="<?= htmlspecialchars($item['stock_actual']) ?>">
+                <?php if ($esEdicion): ?>
+                    <label>Stock actual</label>
+                    <input type="number" value="<?= htmlspecialchars($item['stock_actual']) ?>" disabled>
+                    <p class="ayuda">
+                        El stock ya no se edita aquí — usa
+                        <a href="inventario_kardex.php?id=<?= (int) $item['id_item'] ?>">Ver historial / Registrar movimiento</a>
+                        para sumar o restar unidades con trazabilidad (Semana 12).
+                    </p>
+                <?php else: ?>
+                    <label>Stock inicial <span class="obligatorio">*</span></label>
+                    <input type="number" name="stock_actual" required min="0" step="1"
+                           value="<?= htmlspecialchars($item['stock_actual']) ?>">
+                    <p class="ayuda">A partir de este valor, los cambios de stock se registran como movimientos (entradas/salidas).</p>
+                <?php endif; ?>
             </div>
             <div class="fila">
                 <label>Stock mínimo (umbral de alerta) <span class="obligatorio">*</span></label>
