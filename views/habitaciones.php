@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/check_auth.php';
+require_once __DIR__ . '/../includes/habitaciones_helpers.php'; // Semana 13 Día 2 — colorEstadoHabitacion() compartida
 // El require_once de arriba ya protege esta vista:
 // si no hay $_SESSION['usuario_id'], redirige solo a login.php
 
@@ -32,15 +33,6 @@ $stmt = $conexion->prepare($sql);
 $stmt->execute($params);
 $habitaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-function colorEstadoHabitacion($estado) {
-    switch ($estado) {
-        case 'Disponible':    return '#2E7D32'; // verde HotelSys
-        case 'Ocupada':       return '#C62828'; // rojo
-        case 'Mantenimiento': return '#F9A825'; // amarillo
-        case 'Reservada':     return '#1565C0'; // azul
-        default:              return '#757575'; // gris
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">

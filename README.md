@@ -84,6 +84,7 @@ Sistema de login con control de roles implementado en PHP 8.1.
 | 6 | Módulo de autenticación PHP con roles | ✅ Completado |
 | 7 | Módulo de Reservas | ✅ Completado |
 | 11–12 | Módulo de Inventario con alertas de stock crítico (Kardex, alertas automáticas, reporte exportable, validaciones) | ✅ Completado |
+| 13–14 | Dashboard ejecutivo con KPIs en tiempo real (mapa de habitaciones, alertas de inventario, caja del día y tareas del personal, actualización automática cada 30 segundos) | ✅ Completado |
 
 ---
 
@@ -210,3 +211,103 @@ edición con el stock bloqueado → rechazo por nombre duplicado → exportació
 CSV — cerrando la Actividad VIII a través de las Semanas 11 y 12.
 
 Evidencia detallada de cada día en `Evidencia_Semana12_Dia1..5_HotelSys.pdf`.
+
+---
+
+## Dashboard ejecutivo — Semana 13 (Actividad IX, continúa en Semana 14)
+
+El levantamiento de información (P15) pidió tres widgets concretos para el
+Dashboard ejecutivo. El Día 1 auditó lo que ya existía (KPIs con datos reales
+desde semanas anteriores, pero ningún widget en tiempo real) y confirmó que
+el módulo de Facturación (Actividad X) todavía no existe, definiendo que el
+widget de caja mostraría el valor real ($0) en vez de simularlo.
+
+### Los tres widgets
+
+| Widget | Día | Descripción |
+|---|---|---|
+| 1. Mapa de habitaciones | Día 2 | Cuadrícula de las 24 habitaciones coloreada por estado real (Disponible/Ocupada/Reservada/Mantenimiento), reutilizando `colorEstadoHabitacion()` extraída a `includes/habitaciones_helpers.php` |
+| 2. Alertas de Inventario | Día 3 | Panel lateral (junto al mapa, ~60/40) con las alertas abiertas más antiguas, reemplazando la tarjeta KPI que existía desde la Semana 12 |
+| 3. Caja del día y Tareas | Día 4 | Suma real de facturas pagadas hoy (honestamente $0 sin Facturación) + % de tareas del personal completadas hoy |
+
+### Archivos del Widget 3 (tabla nueva)
+
+| Archivo | Descripción |
+|---|---|
+| `hotelsys_migration_semana13_dia4_tareas.sql` | Crea `tareas_personal` (id_personal FK, descripción, fecha, completada, fecha_completada, creada_por) |
+| `views/tareas_personal.php` | Registro, listado por fecha y toggle de tareas del personal |
+| `modules/personal/tarea_procesar.php` | Valida y registra una tarea nueva |
+| `modules/personal/tarea_estado.php` | Marca una tarea como completada o la reabre |
+
+### Bug encontrado y corregido — zona horaria PHP vs. MySQL
+Al verificar el Widget 3 en vivo (Día 4), una tarea completada para "hoy" no
+aparecía en el Dashboard. La causa: el proyecto no fijaba la zona horaria de
+PHP, que por defecto calculaba la fecha en UTC, mientras que MySQL
+(`CURDATE()`, `NOW()`) usaba la hora real del sistema (Bogotá, UTC-5). De
+noche, ese desfase de 5 horas hacía que PHP ya "viera" el día siguiente
+mientras MySQL seguía en el día actual. Se corrigió agregando
+`date_default_timezone_set('America/Bogota');` en `config/db.php` (cargado
+por todas las páginas), beneficiando no solo al Widget 3 sino a cualquier
+módulo futuro que dependa de "hoy" (reservas, alertas, facturación).
+
+### Día 5 — Integración y cierre de la semana
+Recorrido en vivo con los tres widgets ya integrados: navegación desde el
+mapa de habitaciones hasta el detalle de una habitación, desde el panel de
+alertas hasta la vista completa de Alertas de Inventario, y desde el panel
+de tareas hasta la gestión completa — confirmando datos consistentes entre
+cada widget y su vista de detalle.
+
+Evidencia detallada de cada día en `Evidencia_Semana13_Dia1..5_HotelSys.pdf`.
+
+---
+
+## Dashboard ejecutivo — Semana 14 (cierre de la Actividad IX)
+
+Los tres widgets del levantamiento de información ya estaban construidos al
+cerrar la Semana 13. La Semana 14 no arrancó la Actividad X: en su lugar
+profundizó el Dashboard para que cumpliera de verdad la promesa de "tiempo
+real" de su nombre — el mismo patrón que la Semana 12 aplicó sobre Inventario.
+
+### Día 1 — Auditoría y decisiones de diseño
+Sin código: se confirmó que el Dashboard solo se actualizaba al recargar la
+página manualmente y que la tarjeta KPI "Reservas hoy" seguía siendo un
+placeholder desde la Semana 6. Se definieron tres decisiones: "Reservas hoy"
+cuenta los check-ins programados para hoy (`fecha_entrada = CURDATE()`, no
+reservas activas); el refresco ocurre cada 30 segundos; y la actualización es
+parcial vía JavaScript (`fetch()`), no una recarga completa de la página.
+
+### Día 2 — Función de datos compartida, endpoint JSON y KPI real
+| Archivo | Descripción |
+|---|---|
+| `includes/dashboard_datos.php` | Función `obtenerDatosDashboard()` — reúne las ~10 consultas del Dashboard (antes repetidas dentro de `dashboard.php`) en un solo lugar |
+| `modules/dashboard/dashboard_datos.php` | Endpoint JSON que reutiliza esa misma función, con el mismo control de acceso de administrador |
+
+`views/dashboard.php` pasó a llamar `obtenerDatosDashboard()` en vez de tener
+las consultas inline, y la tarjeta "Reservas hoy" quedó con su valor real —
+completada antes de lo previsto, ya que la nueva función la dejaba lista.
+
+### Día 3 — Actualización automática en el navegador
+Se agregaron atributos `id` a cada elemento dinámico del Dashboard y un
+`<script>` en `views/dashboard.php` que, cada 30 segundos, consulta el
+endpoint del Día 2 y reconstruye cada widget con JavaScript (una función por
+sección: KPIs, mapa de habitaciones, alertas, ocupación y Widget 3), con un
+helper `escaparHtml()` equivalente a `htmlspecialchars()` y un indicador
+visible de "Última actualización".
+
+### Día 4 — Verificación cruzada entre módulos
+Se comprobó, con cambios reales hechos desde otras pantallas (el estado de
+una habitación desde su vista de detalle, una tarea marcada como completada
+desde Personal), que el Dashboard los refleja solo dentro del mismo ciclo de
+30 segundos, sin recargar. En el camino apareció una falla intermitente
+(el mapa no se actualizaba ni aparecía el indicador); se descartó como error
+de código revisando el endpoint directamente (siempre devolvió datos
+correctos) y la consola del navegador (sin errores propios) — la causa era
+una copia en caché del `dashboard.php` anterior al Día 3, resuelta con una
+carga fresca.
+
+### Día 5 — Integración final y cierre
+Recorrido completo en una sola carga: los 6 KPIs, los tres widgets y el
+ciclo de actualización automática funcionando juntos sin inconsistencias,
+cerrando la Actividad IX a través de las Semanas 13 y 14.
+
+Evidencia detallada de cada día en `Evidencia_Semana14_Dia1..5_HotelSys.pdf`.

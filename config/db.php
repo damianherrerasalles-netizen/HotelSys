@@ -2,6 +2,14 @@
 // config/db.php — Conexión PDO a MySQL
 // HotelSys — Hotel Plaza Hostal
 
+// Semana 13 Día 4 — Sin esto, PHP calcula la fecha/hora en UTC por defecto
+// mientras que MySQL (CURDATE(), NOW()) usa la hora real del sistema
+// (Bogotá, UTC-5). El desfase de 5 horas hace que, de noche, PHP ya "vea"
+// el día siguiente mientras MySQL todavía está en el día actual — por
+// ejemplo, esto rompía el Widget 3 del Dashboard ejecutivo (tareas
+// completadas hoy), que comparaba una fecha de PHP contra CURDATE().
+date_default_timezone_set('America/Bogota');
+
 define('BASE_URL', 'http://localhost/hotelsys/');
 
 define('DB_HOST', 'localhost');
