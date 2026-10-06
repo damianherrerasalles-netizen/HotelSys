@@ -84,7 +84,8 @@ Sistema de login con control de roles implementado en PHP 8.1.
 | 6 | Módulo de autenticación PHP con roles | ✅ Completado |
 | 7 | Módulo de Reservas | ✅ Completado |
 | 11–12 | Módulo de Inventario con alertas de stock crítico (Kardex, alertas automáticas, reporte exportable, validaciones) | ✅ Completado |
-| 13–14 | Dashboard ejecutivo con KPIs en tiempo real (mapa de habitaciones, alertas de inventario, caja del día y tareas del personal) | 🔄 En progreso (Semana 13 completada) |
+| 13–14 | Dashboard ejecutivo con KPIs en tiempo real (mapa de habitaciones, alertas de inventario, caja del día y tareas del personal, actualización automática cada 30 segundos) | ✅ Completado |
+| 15–16 | Módulo de Facturación con IVA automático (cargos extra, factura automática al checkout, detalle/impresión, listado y pago, cierre de caja diario con alerta de descuadre) | ✅ Completado |
 
 ---
 
@@ -258,4 +259,145 @@ de tareas hasta la gestión completa — confirmando datos consistentes entre
 cada widget y su vista de detalle.
 
 Evidencia detallada de cada día en `Evidencia_Semana13_Dia1..5_HotelSys.pdf`.
-La Semana 14 continúa y cierra la Actividad IX.
+
+---
+
+## Dashboard ejecutivo — Semana 14 (cierre de la Actividad IX)
+
+Los tres widgets del levantamiento de información ya estaban construidos al
+cerrar la Semana 13. La Semana 14 no arrancó la Actividad X: en su lugar
+profundizó el Dashboard para que cumpliera de verdad la promesa de "tiempo
+real" de su nombre — el mismo patrón que la Semana 12 aplicó sobre Inventario.
+
+### Día 1 — Auditoría y decisiones de diseño
+Sin código: se confirmó que el Dashboard solo se actualizaba al recargar la
+página manualmente y que la tarjeta KPI "Reservas hoy" seguía siendo un
+placeholder desde la Semana 6. Se definieron tres decisiones: "Reservas hoy"
+cuenta los check-ins programados para hoy (`fecha_entrada = CURDATE()`, no
+reservas activas); el refresco ocurre cada 30 segundos; y la actualización es
+parcial vía JavaScript (`fetch()`), no una recarga completa de la página.
+
+### Día 2 — Función de datos compartida, endpoint JSON y KPI real
+| Archivo | Descripción |
+|---|---|
+| `includes/dashboard_datos.php` | Función `obtenerDatosDashboard()` — reúne las ~10 consultas del Dashboard (antes repetidas dentro de `dashboard.php`) en un solo lugar |
+| `modules/dashboard/dashboard_datos.php` | Endpoint JSON que reutiliza esa misma función, con el mismo control de acceso de administrador |
+
+`views/dashboard.php` pasó a llamar `obtenerDatosDashboard()` en vez de tener
+las consultas inline, y la tarjeta "Reservas hoy" quedó con su valor real —
+completada antes de lo previsto, ya que la nueva función la dejaba lista.
+
+### Día 3 — Actualización automática en el navegador
+Se agregaron atributos `id` a cada elemento dinámico del Dashboard y un
+`<script>` en `views/dashboard.php` que, cada 30 segundos, consulta el
+endpoint del Día 2 y reconstruye cada widget con JavaScript (una función por
+sección: KPIs, mapa de habitaciones, alertas, ocupación y Widget 3), con un
+helper `escaparHtml()` equivalente a `htmlspecialchars()` y un indicador
+visible de "Última actualización".
+
+### Día 4 — Verificación cruzada entre módulos
+Se comprobó, con cambios reales hechos desde otras pantallas (el estado de
+una habitación desde su vista de detalle, una tarea marcada como completada
+desde Personal), que el Dashboard los refleja solo dentro del mismo ciclo de
+30 segundos, sin recargar. En el camino apareció una falla intermitente
+(el mapa no se actualizaba ni aparecía el indicador); se descartó como error
+de código revisando el endpoint directamente (siempre devolvió datos
+correctos) y la consola del navegador (sin errores propios) — la causa era
+una copia en caché del `dashboard.php` anterior al Día 3, resuelta con una
+carga fresca.
+
+### Día 5 — Integración final y cierre
+Recorrido completo en una sola carga: los 6 KPIs, los tres widgets y el
+ciclo de actualización automática funcionando juntos sin inconsistencias,
+cerrando la Actividad IX a través de las Semanas 13 y 14.
+
+Evidencia detallada de cada día en `Evidencia_Semana14_Dia1..5_HotelSys.pdf`.
+
+---
+
+## Facturación — Semana 15 (Actividad X, cierre en Semana 16)
+
+El levantamiento de información (P12–P14) pidió IVA automático, cargos extra
+sobre la estadía (minibar, daños, late check-out) y un cierre de caja diario
+por método de pago con alerta de descuadre. La tabla `facturas` ya existía
+desde la Semana 4 (1:1 con `reservas`) y ya era consultada por el Widget 3 del
+Dashboard desde la Semana 13 — pero ningún módulo ni vista existía todavía
+para generarla o gestionarla: toda la Semana 15 se construyó desde cero sobre
+esa base.
+
+### Día 1 — Auditoría y decisiones de diseño
+Sin código: se confirmó que no existía la tabla `cargos_extras` ni archivos
+bajo `modules/facturacion/`. Se definieron tres decisiones: (1) la factura se
+genera automáticamente al finalizar una reserva (checkout), cuando ya se
+conocen todos los cargos; (2) los cargos extra viven en una tabla nueva
+(`cargos_extras`, con tipo Minibar/Daño/Penalización) sumada al subtotal antes
+del IVA; (3) el nivel de cumplimiento DIAN se queda en NIT + fecha + desglose
+de IVA + una leyenda visible de "documento de prueba, sin validez tributaria
+real" — sin CUFE real, ya que eso requiere un proveedor de facturación
+electrónica certificado por la DIAN, fuera del alcance académico.
+
+### Día 2 — Cargos extra y factura automática al checkout
+
+| Archivo | Descripción |
+|---|---|
+| `hotelsys_migration_semana15_dia2_cargos_extras.sql` | Crea `cargos_extras` (tipo ENUM Minibar/Daño/Penalización, valor, FK a `reservas` en cascada, FK a `personal` a SET NULL) |
+| `includes/facturacion_helpers.php` | `resolverIdPersonalDesdeSesion()` (resuelve qué colaborador hizo la operación) y `generarFacturaAutomatica()` (subtotal = habitación + cargos extra, IVA 19%, total) |
+| `views/cargo_extra_form.php` | Formulario de cargo extra sobre una reserva Activa, con el historial de cargos ya registrados |
+| `modules/facturacion/cargo_extra_registrar.php` | Procesa y valida el formulario anterior |
+| `views/reservas.php` | Enlace "+ Cargo extra" junto a "Finalizar (check-out)" |
+| `modules/reservas/reserva_actualizar_estado.php` | Al finalizar una reserva, genera la factura automáticamente dentro de la misma transacción |
+
+**Bug encontrado y corregido:** la primera prueba en vivo falló con un error
+genérico en ambos flujos. Sin acceso a los logs de XAMPP, se expuso
+temporalmente el mensaje técnico real, revelando `SQLSTATE[HY000] 1267`
+("Illegal mix of collations") en el `JOIN` de `resolverIdPersonalDesdeSesion()`
+— las columnas `usuarios.email` y `personal.email` tenían collations
+distintas porque se crearon en sesiones de trabajo diferentes. Se corrigió
+forzando `COLLATE utf8mb4_unicode_ci` en ambos lados del `JOIN`, sin alterar
+las tablas `usuarios` ni `personal` (módulos ya cerrados).
+
+### Día 3 — Detalle/impresión de factura, listado y pago
+
+| Archivo | Descripción |
+|---|---|
+| `views/factura_detalle.php` | Vista imprimible: NIT, leyenda de documento de prueba, desglose línea por línea (habitación + cada cargo extra), y formulario de pago si está Pendiente |
+| `modules/facturacion/factura_pagar.php` | Marca una factura Pendiente como Pagada (Efectivo/Transferencia/Tarjeta/Nequi — los 4 métodos reales del hostal según P14) |
+| `views/facturas.php` | Listado con filtros (estado, método, rango de fechas, búsqueda) y tarjetas de resumen |
+| `config/db.php` | Constantes `HOTEL_NOMBRE`, `HOTEL_DIRECCION`, `HOTEL_NIT` para la plantilla de factura |
+
+Se conectó además la tarjeta "Ingresos del mes" del Dashboard — un
+placeholder desde antes de que existiera este módulo — a la suma real de
+facturas Pagadas del mes en curso.
+
+
+### Día 4 — Cierre de caja diario y alerta de descuadre (P14)
+
+| Archivo | Descripción |
+|---|---|
+| `hotelsys_migration_semana15_dia4_cierre_caja.sql` | Crea `cierres_caja`: una fila por fecha + método de pago, con `monto_sistema` (calculado), `monto_declarado` (contado por el personal) y `diferencia` como columna generada |
+| `modules/facturacion/cierre_registrar.php` | Solo administrador; recalcula `monto_sistema` en el servidor en el momento del guardado (nunca confía en el formulario) |
+| `views/cierre_caja.php` | Selector de fecha, resumen y tabla por método con el estado (sin cerrar / descuadre / cuadrada / parcial) |
+
+Se usó `cierres_caja` como tabla de reconciliación por fecha+método, en vez
+de la tabla `pagos` transacción-por-transacción que sugería el levantamiento,
+porque en el modelo actual cada factura ya equivale a un único pago (1:1, sin
+pagos parciales).
+
+**Bug encontrado y corregido:** el cierre de caja del día actual quedaba
+siempre bloqueado con "Fecha inválida". Causa: `DateTime::createFromFormat()`
+sin un componente de hora en el formato rellena la hora actual del reloj, no
+medianoche, mientras que `new DateTime('today')` siempre es medianoche — la
+fecha de hoy, en cualquier momento después de medianoche, siempre parecía
+"futura". Se corrigió comparando las fechas como texto `Y-m-d` en vez de como
+objetos `DateTime`.
+
+### Día 5 — Recorrido de integración y cierre de la semana
+Prueba de punta a punta con una reserva nueva: cargo extra → checkout con
+factura automática → detalle/impresión → pago → "Ingresos del mes" →
+cierre de caja, verificando que las cuatro piezas de la semana funcionan como
+un solo flujo. Sin errores en esta prueba — cierra la construcción de la
+Actividad X (el commit y push de este README se hace en la Semana 16, mismo
+patrón de cierre que las Actividades VIII y IX).
+
+Evidencia detallada de cada día en `Evidencia_Semana15_Dia2..5_HotelSys.pdf`
+(el Día 1 fue solo de diseño, sin pruebas en vivo).
