@@ -12,6 +12,16 @@ date_default_timezone_set('America/Bogota');
 
 define('BASE_URL', 'http://localhost/hotelsys/');
 
+// Semana 15 Día 3 — Datos del hotel para la plantilla de factura.
+// NIT de prueba: el levantamiento de información (P12-14) no incluyó un NIT
+// real del hostal, y la decisión de diseño confirmada en la Semana 15 Día 1
+// fue mostrar NIT + IVA + una leyenda visible de "documento de prueba — sin
+// validez tributaria real" en vez de perseguir un CUFE DIAN real (fuera de
+// alcance académico). Este valor es solo de ejemplo para esa plantilla.
+define('HOTEL_NOMBRE', 'Hotel Plaza Hostal');
+define('HOTEL_DIRECCION', 'Cl. 19 #19-53, Yarumal, Antioquia');
+define('HOTEL_NIT', '900.000.000-0 (NIT de prueba)');
+
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'hotelsys_plaza');
 define('DB_USER', 'root');

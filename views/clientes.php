@@ -88,6 +88,10 @@ unset($_SESSION['cliente_mensaje'], $_SESSION['cliente_mensaje_tipo']);
         <a href="<?php echo BASE_URL; ?>views/habitaciones.php" style="color:#fff; text-decoration:none; font-weight:bold;">Habitaciones</a>
         &nbsp;|&nbsp;
         <a href="<?php echo BASE_URL; ?>views/personal.php" style="color:#fff; text-decoration:none; font-weight:bold;">Personal</a>
+        &nbsp;|&nbsp;
+        <a href="<?php echo BASE_URL; ?>views/facturas.php" style="color:#fff; text-decoration:none; font-weight:bold;">Facturas</a>
+        &nbsp;|&nbsp;
+        <a href="<?php echo BASE_URL; ?>views/cierre_caja.php" style="color:#fff; text-decoration:none; font-weight:bold;">Caja</a>
     </div>
     <span style="color:#E8F5E9;">
         Sesión: <strong><?php echo htmlspecialchars($_SESSION['rol'] ?? ''); ?></strong>

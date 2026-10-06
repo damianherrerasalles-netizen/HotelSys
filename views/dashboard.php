@@ -245,11 +245,13 @@ extract(obtenerDatosDashboard($conexion));
                 <p>Ir al módulo de Inventario →</p>
             </div>
         </a>
-        <div class="kpi">
-            <p>Ingresos del mes</p>
-            <h2>—</h2>
-            <p>Disponible en Mes 4</p>
-        </div>
+        <a href="facturas.php" class="kpi-link">
+            <div class="kpi">
+                <p>Ingresos del mes</p>
+                <h2 id="kpi-ingresos-mes">$<?= number_format($totalIngresosMes, 0, ',', '.') ?></h2>
+                <p>Ir al módulo de Facturas →</p>
+            </div>
+        </a>
     </div>
 
     <div class="fila-widgets-principal">
@@ -335,10 +337,11 @@ extract(obtenerDatosDashboard($conexion));
             <h2 id="widget3-caja-h2">$<?= number_format($totalCajaHoy, 0, ',', '.') ?></h2>
             <p class="stat-nota" id="widget3-caja-nota">
                 <?php if ($totalCajaHoy > 0): ?>
-                    Total de facturas pagadas hoy
+                    Total de facturas pagadas hoy ·
                 <?php else: ?>
-                    Sin facturas registradas hoy — el módulo de Facturación aún no existe (Actividad X)
+                    Sin facturas pagadas hoy ·
                 <?php endif; ?>
+                <a href="cierre_caja.php">Ver cierre de caja →</a>
             </p>
         </div>
         <div class="stat-panel">
@@ -391,6 +394,8 @@ function actualizarKPIs(d) {
     document.getElementById('kpi-personal').textContent = d.totalPersonalActivo;
     document.getElementById('kpi-stock').textContent = d.totalStockCritico;
     document.getElementById('kpi-stock-div').classList.toggle('kpi-alerta', d.totalStockCritico > 0);
+    document.getElementById('kpi-ingresos-mes').textContent =
+        '$' + Number(d.totalIngresosMes).toLocaleString('es-CO', { maximumFractionDigits: 0 });
 }
 
 function actualizarMapaHabitaciones(mapa) {
@@ -449,9 +454,9 @@ function actualizarOcupacion(filas) {
 function actualizarWidget3(d) {
     document.getElementById('widget3-caja-h2').textContent =
         '$' + Number(d.totalCajaHoy).toLocaleString('es-CO', { maximumFractionDigits: 0 });
-    document.getElementById('widget3-caja-nota').textContent = d.totalCajaHoy > 0
-        ? 'Total de facturas pagadas hoy'
-        : 'Sin facturas registradas hoy — el módulo de Facturación aún no existe (Actividad X)';
+    document.getElementById('widget3-caja-nota').innerHTML =
+        (d.totalCajaHoy > 0 ? 'Total de facturas pagadas hoy · ' : 'Sin facturas pagadas hoy · ')
+        + '<a href="cierre_caja.php">Ver cierre de caja →</a>';
 
     document.getElementById('widget3-tareas-h2').textContent =
         d.pctTareasCompletadasHoy !== null ? d.pctTareasCompletadasHoy + '%' : '—';

@@ -221,6 +221,8 @@ $habitaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="<?= BASE_URL ?>views/reservas.php" class="btn-volver" style="margin-left:8px;">Reservas</a>
             <a href="<?= BASE_URL ?>views/clientes.php" class="btn-volver" style="margin-left:8px;">Clientes</a>
             <a href="<?= BASE_URL ?>views/personal.php" class="btn-volver" style="margin-left:8px;">Personal</a>
+            <a href="<?= BASE_URL ?>views/facturas.php" class="btn-volver" style="margin-left:8px;">Facturas</a>
+            <a href="<?= BASE_URL ?>views/cierre_caja.php" class="btn-volver" style="margin-left:8px;">Caja</a>
         </div>
     </div>
 

@@ -85,6 +85,19 @@ function obtenerDatosDashboard(PDO $conexion): array {
         ? round($totalTareasCompletadasHoy / $totalTareasHoy * 100)
         : null;
 
+    // Semana 15 Día 3 — "Ingresos del mes": la tarjeta ya existía como
+    // placeholder ("Disponible en Mes 4") desde antes de que existiera el
+    // módulo de Facturación. Ahora que la Actividad X ya genera facturas
+    // Pagadas, se conecta con la suma real del mes en curso.
+    $stmtIngresosMes = $conexion->query(
+        "SELECT COALESCE(SUM(total), 0) AS total_mes
+         FROM facturas
+         WHERE estado = 'Pagada'
+           AND YEAR(fecha_emision) = YEAR(CURDATE())
+           AND MONTH(fecha_emision) = MONTH(CURDATE())"
+    );
+    $totalIngresosMes = (float) $stmtIngresosMes->fetch(PDO::FETCH_ASSOC)['total_mes'];
+
     return [
         'ocupacionPorTipo'             => $ocupacionPorTipo,
         'mapaHabitaciones'             => $mapaHabitaciones,
@@ -99,5 +112,6 @@ function obtenerDatosDashboard(PDO $conexion): array {
         'totalTareasHoy'               => $totalTareasHoy,
         'totalTareasCompletadasHoy'    => $totalTareasCompletadasHoy,
         'pctTareasCompletadasHoy'      => $pctTareasCompletadasHoy,
+        'totalIngresosMes'             => $totalIngresosMes,
     ];
 }

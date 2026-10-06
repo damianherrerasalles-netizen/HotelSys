@@ -117,6 +117,10 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
         <a href="<?= BASE_URL ?>views/habitaciones.php">Habitaciones</a>
         &nbsp;|&nbsp;
         <a href="<?= BASE_URL ?>views/personal.php">Personal</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/facturas.php">Facturas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/cierre_caja.php">Caja</a>
     </div>
     <span class="nav-rol">
         Sesión: <strong><?= htmlspecialchars($_SESSION['rol'] ?? '') ?></strong>
@@ -240,6 +244,7 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
                                 <button type="submit">Check-in</button>
                             </form>
                         <?php elseif ($r['estado'] === 'Activa'): ?>
+                            <a href="<?= BASE_URL ?>views/cargo_extra_form.php?id=<?= (int)$r['id_reserva'] ?>">+ Cargo extra</a>
                             <form class="form-accion" action="<?= BASE_URL ?>modules/reservas/reserva_actualizar_estado.php" method="POST">
                                 <input type="hidden" name="id_reserva" value="<?= (int)$r['id_reserva'] ?>">
                                 <input type="hidden" name="nuevo_estado" value="Finalizada">

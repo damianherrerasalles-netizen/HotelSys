@@ -10,6 +10,7 @@
 
 require_once __DIR__ . '/../../config/db.php'; // Define BASE_URL y getConexion()
 require_once __DIR__ . '/../../includes/check_auth.php';
+require_once __DIR__ . '/../../includes/facturacion_helpers.php'; // Semana 15 Día 2 — factura automática al checkout
 
 $pdo = getConexion();
 
@@ -100,7 +101,20 @@ try {
     // Si el nuevo estado es 'Confirmada', la habitación no cambia todavía
     // (solo cambia a 'Ocupada' en el check-in, es decir, al pasar a 'Activa').
 
+    // --- Semana 15 Día 2: al hacer checkout, generar la factura automáticamente ---
+    // (decisión de diseño confirmada en el Día 1: es el momento en que ya se
+    // conocen todos los cargos extra reales de la estadía)
+    $idFacturaGenerada = null;
+    if ($nuevo_estado === 'Finalizada') {
+        $idPersonal = resolverIdPersonalDesdeSesion($pdo, (int) $_SESSION['usuario_id']);
+        $idFacturaGenerada = generarFacturaAutomatica($pdo, $id_reserva, $idPersonal);
+    }
+
     $pdo->commit();
+
+    if ($idFacturaGenerada !== null) {
+        volverConMensaje("Reserva finalizada. Factura #{$idFacturaGenerada} generada automáticamente.", 'exito');
+    }
 
     volverConMensaje("Reserva actualizada a estado '{$nuevo_estado}' correctamente.", 'exito');
 
@@ -109,5 +123,6 @@ try {
         $pdo->rollBack();
     }
     error_log('Error al actualizar estado de reserva: ' . $e->getMessage());
-    volverConMensaje('Ocurrió un error al actualizar la reserva. Intenta de nuevo.');
+    // TEMPORAL — Semana 15 Día 2, solo para depurar: muestra el mensaje real de la BD.
+    volverConMensaje('Ocurrió un error al actualizar la reserva: ' . $e->getMessage());
 }
