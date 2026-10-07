@@ -5,8 +5,10 @@
 // Reglas:
 //   - Confirmar / Check-in / Finalizar: administrador y recepcionista
 //   - Cancelar: SOLO administrador
+//   - Confirmada  -> habitacion pasa a 'Reservada'
 //   - Activa      -> habitacion pasa a 'Ocupada'
-//   - Cancelada / Finalizada -> habitacion vuelve a 'Disponible'
+//   - Cancelada / Finalizada -> habitacion vuelve a 'Disponible', salvo que
+//     tenga otra reserva Activa/Confirmada (Semana 20, hallazgo #4)
 
 require_once __DIR__ . '/../../config/db.php'; // Define BASE_URL y getConexion()
 require_once __DIR__ . '/../../includes/check_auth.php';
@@ -92,14 +94,45 @@ try {
             "UPDATE habitaciones SET estado = 'Ocupada' WHERE id_habitacion = :id"
         );
         $stmtHab->execute([':id' => $reserva['id_habitacion']]);
-    } elseif (in_array($nuevo_estado, ['Cancelada', 'Finalizada'], true)) {
+    } elseif ($nuevo_estado === 'Confirmada') {
+        // Ajuste Semana 20 (hallazgo #4, Semana 19 Día 3): antes la habitación
+        // seguía mostrando 'Disponible' con una reserva ya Confirmada —
+        // fricción visual en el mapa de Habitaciones y en el selector de
+        // Nueva reserva. 'Reservada' ya existía como estado soportado
+        // (filtro y color en habitaciones.php, bloqueo de Mantenimiento en
+        // mantenimiento_helpers.php) pero nunca se activaba desde aquí.
         $stmtHab = $pdo->prepare(
-            "UPDATE habitaciones SET estado = 'Disponible' WHERE id_habitacion = :id"
+            "UPDATE habitaciones SET estado = 'Reservada' WHERE id_habitacion = :id"
         );
         $stmtHab->execute([':id' => $reserva['id_habitacion']]);
+    } elseif (in_array($nuevo_estado, ['Cancelada', 'Finalizada'], true)) {
+        // No liberar a ciegas a 'Disponible': si la misma habitación tiene
+        // OTRA reserva Activa o Confirmada (p. ej. una reserva futura ya
+        // confirmada), el estado debe reflejar esa otra reserva — mismo
+        // criterio que ya usa liberarHabitacionDeMantenimiento() en
+        // includes/mantenimiento_helpers.php antes de liberar una habitación.
+        $stmtOtra = $pdo->prepare(
+            "SELECT estado FROM reservas
+             WHERE id_habitacion = :id_habitacion AND id_reserva != :id_reserva
+               AND estado IN ('Activa', 'Confirmada')
+             ORDER BY FIELD(estado, 'Activa', 'Confirmada') LIMIT 1"
+        );
+        $stmtOtra->execute([
+            ':id_habitacion' => $reserva['id_habitacion'],
+            ':id_reserva'    => $id_reserva,
+        ]);
+        $otra = $stmtOtra->fetch(PDO::FETCH_ASSOC);
+
+        $estadoHabitacion = 'Disponible';
+        if ($otra) {
+            $estadoHabitacion = $otra['estado'] === 'Activa' ? 'Ocupada' : 'Reservada';
+        }
+
+        $stmtHab = $pdo->prepare(
+            "UPDATE habitaciones SET estado = :estado WHERE id_habitacion = :id"
+        );
+        $stmtHab->execute([':estado' => $estadoHabitacion, ':id' => $reserva['id_habitacion']]);
     }
-    // Si el nuevo estado es 'Confirmada', la habitación no cambia todavía
-    // (solo cambia a 'Ocupada' en el check-in, es decir, al pasar a 'Activa').
 
     // --- Semana 15 Día 2: al hacer checkout, generar la factura automáticamente ---
     // (decisión de diseño confirmada en el Día 1: es el momento en que ya se

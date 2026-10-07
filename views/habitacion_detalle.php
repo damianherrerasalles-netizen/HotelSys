@@ -39,6 +39,22 @@ $stmtReservas = $conexion->prepare(
 $stmtReservas->execute([':id_habitacion' => $idHabitacion]);
 $historial = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
 
+// Ajuste Semana 20 (hallazgo #2, Semana 19 Día 3): esta vista no mostraba el
+// mantenimiento vinculado desde la tabla `mantenimientos` (Actividad XI) —
+// solo el campo `descripcion` estático, que además había quedado con texto
+// de una prueba anterior sin relación con el mantenimiento real. Se agrega
+// aquí el historial real, misma consulta que ya usa views/mantenimientos.php.
+$stmtMantenimientos = $conexion->prepare(
+    "SELECT m.motivo, m.fecha_inicio, m.fecha_fin, m.costo,
+            CASE WHEN p.id_personal IS NULL THEN NULL ELSE CONCAT(p.nombres, ' ', p.apellidos) END AS responsable
+     FROM mantenimientos m
+     LEFT JOIN personal p ON p.id_personal = m.id_personal
+     WHERE m.id_habitacion = :id_habitacion
+     ORDER BY m.fecha_fin IS NULL DESC, m.fecha_inicio DESC"
+);
+$stmtMantenimientos->execute([':id_habitacion' => $idHabitacion]);
+$historialMantenimientos = $stmtMantenimientos->fetchAll(PDO::FETCH_ASSOC);
+
 function colorEstadoHabitacion($estado) {
     switch ($estado) {
         case 'Disponible':    return '#2E7D32';
@@ -182,6 +198,40 @@ foreach ($amenidadesLabels as $campo => $label) {
             </div>
         <?php endif; ?>
     </div>
+
+    <?php if (count($historialMantenimientos) > 0): ?>
+        <h2 class="seccion">Historial de mantenimientos</h2>
+        <table style="margin-bottom:25px;">
+            <thead>
+                <tr>
+                    <th>Motivo</th>
+                    <th>Responsable</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Costo</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($historialMantenimientos as $m): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($m['motivo']) ?></td>
+                        <td><?= htmlspecialchars($m['responsable'] ?? '—') ?></td>
+                        <td><?= htmlspecialchars($m['fecha_inicio']) ?></td>
+                        <td><?= htmlspecialchars($m['fecha_fin'] ?? '—') ?></td>
+                        <td>$<?= number_format($m['costo'], 0, ',', '.') ?></td>
+                        <td>
+                            <?php if ($m['fecha_fin'] === null): ?>
+                                <span class="badge-reserva" style="background-color:#F9A825;">En curso</span>
+                            <?php else: ?>
+                                <span class="badge-reserva" style="background-color:#757575;">Finalizado</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
 
     <h2 class="seccion">Historial de reservas</h2>
 

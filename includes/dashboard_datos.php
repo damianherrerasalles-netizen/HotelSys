@@ -47,6 +47,22 @@ function obtenerDatosDashboard(PDO $conexion): array {
     );
     $totalStockCritico = (int) $stmtCriticos->fetch(PDO::FETCH_ASSOC)['total'];
 
+    // Ajuste Semana 20 (hallazgo #6, Semana 19 Día 4): reconciliar antes de
+    // contar, para que este KPI no dependa de que un admin haya visitado
+    // primero views/alertas_inventario.php (misma consulta idempotente que
+    // esa vista usa).
+    $conexion->exec(
+        "INSERT INTO alertas_inventario (id_item, stock_al_generar, stock_minimo_al_generar, estado)
+         SELECT i.id_item, i.stock_actual, i.stock_minimo, 'abierta'
+         FROM inventario i
+         WHERE i.activo = 1
+           AND i.stock_actual <= i.stock_minimo
+           AND NOT EXISTS (
+               SELECT 1 FROM alertas_inventario a
+               WHERE a.id_item = i.id_item AND a.estado = 'abierta'
+           )"
+    );
+
     // Alertas de inventario generadas automáticamente y aún abiertas — Semana 12 Día 2
     $stmtAlertas = $conexion->query("SELECT COUNT(*) AS total FROM alertas_inventario WHERE estado = 'abierta'");
     $totalAlertasAbiertas = (int) $stmtAlertas->fetch(PDO::FETCH_ASSOC)['total'];

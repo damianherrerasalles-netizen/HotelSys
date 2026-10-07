@@ -7,6 +7,26 @@ requerirAdmin(); // Solo admin gestiona alertas de inventario
 
 $pdo = getConexion();
 
+// --- Ajuste Semana 20 (hallazgo #6, Semana 19 Día 4) ---
+// Antes, un insumo podía llegar a stock crítico sin pasar por un movimiento
+// de Kardex registrado (p. ej. carga inicial de stock) y nunca generaba
+// alerta, quedando desincronizado del KPI "Insumos en stock crítico" del
+// Dashboard. Se reconcilia aquí, cada vez que un admin visita esta vista:
+// genera una alerta 'abierta' (mismo INSERT que ya usa
+// modules/inventario/movimiento_registrar.php) para todo insumo activo en
+// stock crítico que todavía no tenga una — el NOT EXISTS lo hace idempotente.
+$pdo->exec(
+    "INSERT INTO alertas_inventario (id_item, stock_al_generar, stock_minimo_al_generar, estado)
+     SELECT i.id_item, i.stock_actual, i.stock_minimo, 'abierta'
+     FROM inventario i
+     WHERE i.activo = 1
+       AND i.stock_actual <= i.stock_minimo
+       AND NOT EXISTS (
+           SELECT 1 FROM alertas_inventario a
+           WHERE a.id_item = i.id_item AND a.estado = 'abierta'
+       )"
+);
+
 $stmtAbiertas = $pdo->query(
     "SELECT a.id_alerta, a.stock_al_generar, a.stock_minimo_al_generar, a.fecha_generada,
             i.id_item, i.nombre_item, i.categoria, i.unidad_medida

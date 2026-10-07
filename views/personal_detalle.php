@@ -95,6 +95,29 @@ $color = $colorCargo[$colaborador['cargo']] ?? '#616161';
     <title>Detalle de <?= htmlspecialchars($colaborador['nombres']) ?> - HotelSys</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F5F5; margin: 0; }
+        /* Ajuste Semana 20 (hallazgo #5, Semana 19 Día 4): esta vista no tenía
+           ninguna navegación hacia el resto del sistema, ni siquiera un
+           botón "← Dashboard". Mismo nav-hotelsys que ya usan
+           views/reservas.php, views/habitaciones.php, etc. */
+        .nav-hotelsys {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2E7D32;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+        }
+        .nav-hotelsys a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-hotelsys a:hover {
+            text-decoration: underline;
+        }
+        .nav-rol {
+            color: #E8F5E9;
+        }
         .contenedor { max-width: 900px; margin: 30px auto; padding: 0 20px; }
         .tarjeta-cabecera {
             background: #fff; border-radius: 10px; padding: 24px;
@@ -147,6 +170,35 @@ $color = $colorCargo[$colaborador['cargo']] ?? '#616161';
     </style>
 </head>
 <body>
+
+<nav class="nav-hotelsys">
+    <div>
+        <a href="<?= BASE_URL ?>views/dashboard.php">← Dashboard</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/reservas.php">Reservas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/clientes.php">Clientes</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/habitaciones.php">Habitaciones</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/personal.php">Personal</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/tareas_personal.php">Tareas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/facturas.php">Facturas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/cierre_caja.php">Caja</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/mantenimientos.php">Mantenimiento</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/reportes.php">Reportes</a>
+    </div>
+    <span class="nav-rol">
+        Sesión: <strong><?= htmlspecialchars($_SESSION['rol'] ?? '') ?></strong>
+    </span>
+    <a href="<?= BASE_URL ?>views/logout.php">Cerrar sesión</a>
+</nav>
+
 <div class="contenedor">
     <a href="personal.php" class="btn-volver">← Volver al listado</a>
 

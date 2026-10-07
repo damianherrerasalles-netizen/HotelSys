@@ -33,10 +33,28 @@ $stmtCli = $pdo->query(
 );
 $clientes = $stmtCli->fetchAll(PDO::FETCH_ASSOC);
 
-// --- Listado de reservas activas ---
+// --- Listado de reservas ---
 // Nota: no usamos v_reservas_activas porque esa vista solo incluye
 // reservas en estado Confirmada/Activa, y excluye las Pendiente
 // (estado por defecto al crear una reserva nueva).
+//
+// Ajuste Semana 20 (hallazgo #1, Semana 19 Día 3): antes este listado
+// siempre excluía Cancelada/Finalizada sin ninguna forma de consultar el
+// historial desde Reservas (había que ir a Facturas). Se agrega un filtro
+// por estado, con "Activas" como valor por defecto para no cambiar el
+// comportamiento que ya conocía el aprendiz.
+$filtroEstadoReserva = $_GET['estado'] ?? 'activas'; // activas | finalizada | cancelada | todas
+
+$condicionReserva = '';
+if ($filtroEstadoReserva === 'activas') {
+    $condicionReserva = "WHERE r.estado NOT IN ('Cancelada', 'Finalizada')";
+} elseif ($filtroEstadoReserva === 'finalizada') {
+    $condicionReserva = "WHERE r.estado = 'Finalizada'";
+} elseif ($filtroEstadoReserva === 'cancelada') {
+    $condicionReserva = "WHERE r.estado = 'Cancelada'";
+}
+// 'todas' no agrega condición
+
 $stmtReservas = $pdo->query(
     "SELECT r.id_reserva,
             CONCAT(c.nombres, ' ', c.apellidos) AS huesped,
@@ -53,7 +71,7 @@ $stmtReservas = $pdo->query(
      FROM reservas r
      JOIN clientes c ON c.id_cliente = r.id_cliente
      JOIN habitaciones h ON h.id_habitacion = r.id_habitacion
-     WHERE r.estado NOT IN ('Cancelada', 'Finalizada')
+     $condicionReserva
      ORDER BY r.fecha_entrada DESC"
 );
 $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
@@ -121,6 +139,10 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
         <a href="<?= BASE_URL ?>views/facturas.php">Facturas</a>
         &nbsp;|&nbsp;
         <a href="<?= BASE_URL ?>views/cierre_caja.php">Caja</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/mantenimientos.php">Mantenimiento</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/reportes.php">Reportes</a>
     </div>
     <span class="nav-rol">
         Sesión: <strong><?= htmlspecialchars($_SESSION['rol'] ?? '') ?></strong>
@@ -191,7 +213,18 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
     <button type="submit">Crear reserva</button>
 </form>
 
-<h2>Reservas activas</h2>
+<h2>Reservas</h2>
+<form method="GET" action="<?= BASE_URL ?>views/reservas.php" style="margin-bottom:10px; display:flex; gap:8px; align-items:center;">
+    <label for="filtro-estado-reserva">Mostrar:</label>
+    <select name="estado" id="filtro-estado-reserva">
+        <option value="activas" <?= $filtroEstadoReserva === 'activas' ? 'selected' : '' ?>>Activas (Pendiente/Confirmada/Activa)</option>
+        <option value="finalizada" <?= $filtroEstadoReserva === 'finalizada' ? 'selected' : '' ?>>Finalizadas</option>
+        <option value="cancelada" <?= $filtroEstadoReserva === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
+        <option value="todas" <?= $filtroEstadoReserva === 'todas' ? 'selected' : '' ?>>Todas</option>
+    </select>
+    <button type="submit">Filtrar</button>
+    <a href="<?= BASE_URL ?>views/reservas.php">Limpiar</a>
+</form>
 <table border="1" cellpadding="6" cellspacing="0">
     <thead>
         <tr>
@@ -212,7 +245,7 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
     </thead>
     <tbody>
         <?php if (empty($reservas)): ?>
-            <tr><td colspan="12">No hay reservas activas registradas.</td></tr>
+            <tr><td colspan="12">No hay reservas que coincidan con el filtro seleccionado.</td></tr>
         <?php else: ?>
             <?php foreach ($reservas as $r): ?>
                 <tr>
@@ -252,7 +285,7 @@ $reservas = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
                             </form>
                         <?php endif; ?>
 
-                        <?php if (esAdmin()): ?>
+                        <?php if (esAdmin() && !in_array($r['estado'], ['Cancelada', 'Finalizada'], true)): ?>
                             <form class="form-accion form-cancelar" action="<?= BASE_URL ?>modules/reservas/reserva_actualizar_estado.php" method="POST" onsubmit="return prepararCancelacion(this);">
                                 <input type="hidden" name="id_reserva" value="<?= (int)$r['id_reserva'] ?>">
                                 <input type="hidden" name="nuevo_estado" value="Cancelada">

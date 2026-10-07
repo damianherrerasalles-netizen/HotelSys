@@ -66,6 +66,28 @@ unset($_SESSION['personal_mensaje'], $_SESSION['personal_mensaje_tipo']);
     <title>Personal - HotelSys</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/estilos.css">
     <style>
+        /* Ajuste Semana 20 (hallazgo #5, Semana 19 Día 4): esta vista no tenía
+           ninguna navegación hacia el resto del sistema. Mismo nav-hotelsys
+           que ya usan views/reservas.php, views/habitaciones.php, etc. */
+        .nav-hotelsys {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2E7D32;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+        }
+        .nav-hotelsys a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-hotelsys a:hover {
+            text-decoration: underline;
+        }
+        .nav-rol {
+            color: #E8F5E9;
+        }
         .personal-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -132,9 +154,40 @@ unset($_SESSION['personal_mensaje'], $_SESSION['personal_mensaje_tipo']);
     </style>
 </head>
 <body>
+
+<nav class="nav-hotelsys">
+    <div>
+        <a href="<?= BASE_URL ?>views/dashboard.php">← Dashboard</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/reservas.php">Reservas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/clientes.php">Clientes</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/habitaciones.php">Habitaciones</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/personal.php">Personal</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/tareas_personal.php">Tareas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/facturas.php">Facturas</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/cierre_caja.php">Caja</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/mantenimientos.php">Mantenimiento</a>
+        &nbsp;|&nbsp;
+        <a href="<?= BASE_URL ?>views/reportes.php">Reportes</a>
+    </div>
+    <span class="nav-rol">
+        Sesión: <strong><?= htmlspecialchars($_SESSION['rol'] ?? '') ?></strong>
+    </span>
+    <a href="<?= BASE_URL ?>views/logout.php">Cerrar sesión</a>
+</nav>
+
 <div class="contenedor">
     <h1>Gestión de Personal</h1>
-    <p class="subtitulo">Hotel Plaza Hostal — Colaboradores registrados</p>
+    <p class="subtitulo">Hotel Plaza Hostal — Colaboradores registrados ·
+        <a href="<?= BASE_URL ?>views/tareas_personal.php">Ver tareas del personal →</a>
+    </p>
 
     <?php if ($flashMensaje): ?>
         <div class="alerta alerta-<?= htmlspecialchars($flashTipo) ?>">

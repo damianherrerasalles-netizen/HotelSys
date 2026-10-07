@@ -39,13 +39,24 @@ $historial = $stmtHistorial->fetchAll(PDO::FETCH_ASSOC);
 // Totales: solo se cuentan estadias efectivamente realizadas o en curso
 $sqlTotales = "SELECT
                     COUNT(CASE WHEN estado IN ('Finalizada', 'Activa') THEN 1 END) AS num_estadias,
-                    COALESCE(SUM(CASE WHEN estado IN ('Finalizada', 'Activa') THEN total_calculado END), 0) AS gasto_acumulado,
                     MAX(CASE WHEN estado = 'Finalizada' THEN fecha_salida END) AS ultima_visita
                FROM reservas
                WHERE id_cliente = :id_cliente";
 $stmtTotales = $pdo->prepare($sqlTotales);
 $stmtTotales->execute([':id_cliente' => $idCliente]);
 $totales = $stmtTotales->fetch(PDO::FETCH_ASSOC);
+
+// Ajuste Semana 20 (hallazgo #3, Semana 19 Día 3): "Gasto acumulado" sumaba
+// reservas.total_calculado, que solo cubre el alojamiento — nunca incluía
+// cargos extra (p. ej. Penalización) ni el IVA del 19%. El gasto real que
+// pagó el cliente es el total de sus facturas Pagadas (facturas.total ya
+// incluye alojamiento + cargos extra + IVA — ver includes/facturacion_helpers.php).
+$sqlGastoReal = "SELECT COALESCE(SUM(total), 0) AS gasto_acumulado
+                  FROM facturas
+                  WHERE id_cliente = :id_cliente AND estado = 'Pagada'";
+$stmtGastoReal = $pdo->prepare($sqlGastoReal);
+$stmtGastoReal->execute([':id_cliente' => $idCliente]);
+$gastoAcumulado = (float) $stmtGastoReal->fetch(PDO::FETCH_ASSOC)['gasto_acumulado'];
 
 // Mapeo de clases CSS por estado, para colorear badges en el historial
 $claseEstado = [
@@ -122,7 +133,7 @@ $claseEstado = [
         </div>
         <div class="tarjeta">
             <span class="tarjeta-valor">
-                $<?php echo number_format((float)$totales['gasto_acumulado'], 0, ',', '.'); ?>
+                $<?php echo number_format($gastoAcumulado, 0, ',', '.'); ?>
             </span>
             <span class="tarjeta-etiqueta">Gasto acumulado</span>
         </div>
