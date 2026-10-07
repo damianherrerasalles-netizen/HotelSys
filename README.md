@@ -86,6 +86,7 @@ Sistema de login con control de roles implementado en PHP 8.1.
 | 11–12 | Módulo de Inventario con alertas de stock crítico (Kardex, alertas automáticas, reporte exportable, validaciones) | ✅ Completado |
 | 13–14 | Dashboard ejecutivo con KPIs en tiempo real (mapa de habitaciones, alertas de inventario, caja del día y tareas del personal, actualización automática cada 30 segundos) | ✅ Completado |
 | 15–16 | Módulo de Facturación con IVA automático (cargos extra, factura automática al checkout, detalle/impresión, listado y pago, cierre de caja diario con alerta de descuadre) | ✅ Completado |
+| 17–18 | Módulo de Reportes con gráficas e indicadores (ocupación, ingresos y costo de mantenimiento por habitación/mes, con filtro de fechas personalizado y gráficas Chart.js) | ✅ Completado |
 
 ---
 
@@ -400,4 +401,92 @@ Actividad X (el commit y push de este README se hace en la Semana 16, mismo
 patrón de cierre que las Actividades VIII y IX).
 
 Evidencia detallada de cada día en `Evidencia_Semana15_Dia2..5_HotelSys.pdf`
+(el Día 1 fue solo de diseño, sin pruebas en vivo).
+
+---
+
+## Reportes — Semana 17 (Actividad XI, cierre en Semana 18)
+
+El levantamiento de información (P6–P7) pedía reportes de ocupación e
+ingresos; el Día 1 de esta semana amplió el alcance a un tercer reporte
+(costo de mantenimiento por habitación/mes) para cerrar una brecha que había
+quedado pendiente desde entonces, ya que la tabla `mantenimientos` todavía no
+existía — solo `habitaciones.estado` tenía el valor `Mantenimiento`, sin
+ningún registro de costo ni historial. Chart.js (vía CDN) se usó como
+librería de gráficas, ya definida en la propuesta del proyecto.
+
+### Día 1 — Auditoría y decisiones de diseño
+Sin código: se confirmó que no existían ni la tabla `mantenimientos` ni
+ningún archivo de reportes. Se definieron cuatro decisiones: (1) el alcance
+se amplía a 3 reportes, no solo ocupación e ingresos; (2) los tres reportes
+filtran por un rango de fechas personalizado (desde/hasta), el mismo patrón
+ya usado en `facturas.php`; (3) la brecha de costo de mantenimiento se cierra
+esta semana con una tabla `mantenimientos` nueva (habitación, motivo, fechas
+de inicio/fin, responsable, costo) y un CRUD de registro, marcando la
+habitación en 'Mantenimiento' mientras el registro esté abierto; (4) el
+tercer reporte usa exactamente esa tabla nueva.
+
+### Día 2 — Módulo de Mantenimiento (tabla, CRUD y auto-estado)
+
+| Archivo | Descripción |
+|---|---|
+| `hotelsys_migration_semana17_dia2_mantenimientos.sql` | Crea `mantenimientos` (habitación, responsable, motivo, fechas de inicio/fin, costo — `fecha_fin` nula = en curso) + vista `v_mantenimientos_en_curso` |
+| `includes/mantenimiento_helpers.php` | Marca/libera una habitación de Mantenimiento reutilizando las reglas ya validadas del módulo de Habitaciones |
+| `views/mantenimiento_form.php` / `mantenimientos.php` | Registro y listado con filtros, tarjetas de resumen y cierre en línea |
+
+**Hallazgo corregido:** el botón rápido de cambio de estado que ya existía en
+`views/habitaciones.php` (de antes de esta semana) cambiaba una habitación a
+Mantenimiento sin crear ningún registro en la tabla nueva, lo que habría
+dejado huecos en el reporte de costos del Día 5. Se corrigió para que ese
+botón también inserte/cierre un registro mínimo en `mantenimientos`, y se
+aplicó una corrección retroactiva a la única habitación afectada por pruebas
+anteriores.
+
+### Día 3 — Reporte de Ocupación
+
+| Archivo | Descripción |
+|---|---|
+| `views/reportes.php` | Hub con las 3 tarjetas de reportes |
+| `views/reporte_ocupacion.php` | % de ocupación por tipo de habitación en el rango de fechas elegido, con gráfica Chart.js |
+
+Metodología: noches-habitación ocupadas (reservas Activa/Finalizada,
+recortadas en los bordes del rango) ÷ noches-habitación disponibles, por
+tipo de habitación. El resultado del rango por defecto pareció casi nulo al
+probarlo por primera vez; se verificó contra una consulta SQL real de
+`reservas` antes de tocar el código, confirmando que el cálculo era correcto
+desde el inicio — los datos de prueba simplemente estaban concentrados en
+otro rango de fechas.
+
+### Día 4 — Reporte de Ingresos
+
+| Archivo | Descripción |
+|---|---|
+| `views/reporte_ingresos.php` | Ingresos facturados por método de pago en el rango elegido, con gráfica Chart.js |
+
+Metodología: solo facturas en estado Pagada, filtradas por fecha de emisión
+y agrupadas por los 4 métodos reales del hostal — generaliza a un rango de
+fechas la misma lógica que `cierre_caja.php` ya usa para un solo día.
+Verificado por comparación cruzada contra el cierre de caja del 06/10/2026,
+ya confirmado en la evidencia de la Semana 15; coincidió exactamente, sin
+hallazgos.
+
+### Día 5 — Reporte de Costo de Mantenimiento y cierre de la semana
+
+| Archivo | Descripción |
+|---|---|
+| `views/reporte_mantenimiento.php` | Costo de mantenimiento por habitación y por mes en el rango elegido, con gráfica Chart.js |
+
+Metodología: filtra por `fecha_inicio` del mantenimiento (igual criterio de
+fecha única que usa Ingresos con `fecha_emision`), incluyendo los
+mantenimientos en curso. El mismo patrón de verificación de los Días 3 y 4
+se repitió una tercera vez: un resultado aparentemente incompleto resultó
+ser, otra vez, un registro real fuera del rango de fechas probado, no un
+error de código — confirmado contra la tabla `mantenimientos` antes de
+cambiar nada.
+
+Con los 3 reportes construidos, probados y verificados contra datos reales,
+la Semana 17 cierra su construcción; el commit y push de este README se hace
+en la Semana 18, mismo patrón de cierre que las Actividades VIII, IX y X.
+
+Evidencia detallada de cada día en `Evidencia_Semana17_Dia2..5_HotelSys.pdf`
 (el Día 1 fue solo de diseño, sin pruebas en vivo).
