@@ -89,11 +89,18 @@ try {
     }
 
     // --- Sincronizar estado de la habitación ---
+    // Ajuste Semana 22 (Actividad XIII, confirmado en validación Semana 21
+    // Día 2-3): registrar quién y cuándo hizo el último cambio de estado de
+    // la habitación, mismo criterio que habitacion_actualizar_estado.php.
+    $actualizadoPor = $_SESSION['nombre'] ?? 'Administrador';
+
     if ($nuevo_estado === 'Activa') {
         $stmtHab = $pdo->prepare(
-            "UPDATE habitaciones SET estado = 'Ocupada' WHERE id_habitacion = :id"
+            "UPDATE habitaciones
+             SET estado = 'Ocupada', actualizado_por = :actualizado_por, fecha_actualizacion = NOW()
+             WHERE id_habitacion = :id"
         );
-        $stmtHab->execute([':id' => $reserva['id_habitacion']]);
+        $stmtHab->execute([':actualizado_por' => $actualizadoPor, ':id' => $reserva['id_habitacion']]);
     } elseif ($nuevo_estado === 'Confirmada') {
         // Ajuste Semana 20 (hallazgo #4, Semana 19 Día 3): antes la habitación
         // seguía mostrando 'Disponible' con una reserva ya Confirmada —
@@ -102,9 +109,11 @@ try {
         // (filtro y color en habitaciones.php, bloqueo de Mantenimiento en
         // mantenimiento_helpers.php) pero nunca se activaba desde aquí.
         $stmtHab = $pdo->prepare(
-            "UPDATE habitaciones SET estado = 'Reservada' WHERE id_habitacion = :id"
+            "UPDATE habitaciones
+             SET estado = 'Reservada', actualizado_por = :actualizado_por, fecha_actualizacion = NOW()
+             WHERE id_habitacion = :id"
         );
-        $stmtHab->execute([':id' => $reserva['id_habitacion']]);
+        $stmtHab->execute([':actualizado_por' => $actualizadoPor, ':id' => $reserva['id_habitacion']]);
     } elseif (in_array($nuevo_estado, ['Cancelada', 'Finalizada'], true)) {
         // No liberar a ciegas a 'Disponible': si la misma habitación tiene
         // OTRA reserva Activa o Confirmada (p. ej. una reserva futura ya
@@ -129,9 +138,15 @@ try {
         }
 
         $stmtHab = $pdo->prepare(
-            "UPDATE habitaciones SET estado = :estado WHERE id_habitacion = :id"
+            "UPDATE habitaciones
+             SET estado = :estado, actualizado_por = :actualizado_por, fecha_actualizacion = NOW()
+             WHERE id_habitacion = :id"
         );
-        $stmtHab->execute([':estado' => $estadoHabitacion, ':id' => $reserva['id_habitacion']]);
+        $stmtHab->execute([
+            ':estado' => $estadoHabitacion,
+            ':actualizado_por' => $actualizadoPor,
+            ':id' => $reserva['id_habitacion'],
+        ]);
     }
 
     // --- Semana 15 Día 2: al hacer checkout, generar la factura automáticamente ---

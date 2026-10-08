@@ -97,6 +97,28 @@ extract(obtenerDatosDashboard($conexion));
         .ocupacion-detalle {
             font-size: 11px; color: #999; margin-top: 3px;
         }
+        /* Ajuste Semana 22 (Actividad XIII) — Ocupación proyectada a 7 días */
+        .proyeccion-panel {
+            background: #fff; border: 1px solid #C8E6C9; border-radius: 8px;
+            padding: 20px; margin-top: 20px;
+        }
+        .proyeccion-panel h3 { color: #2E7D32; font-size: 16px; margin-bottom: 4px; }
+        .proyeccion-panel .subtitulo { font-size: 12px; color: #757575; margin-bottom: 16px; }
+        .proyeccion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 12px;
+        }
+        .proyeccion-dia { text-align: center; }
+        .proyeccion-dia .etiqueta { font-size: 12px; color: #444; margin-bottom: 6px; }
+        .proyeccion-dia .barra-fondo { height: 70px; width: 100%; border-radius: 6px; }
+        .proyeccion-dia .barra-vertical {
+            width: 100%; height: 70px; background: #E8F5E9; border-radius: 6px;
+            display: flex; align-items: flex-end; overflow: hidden;
+        }
+        .proyeccion-dia .barra-vertical-relleno { width: 100%; background: #2E7D32; }
+        .proyeccion-dia .pct { font-size: 13px; font-weight: bold; color: #2E7D32; margin-top: 6px; }
+        .proyeccion-dia .detalle { font-size: 10.5px; color: #999; margin-top: 2px; }
         /* Widget 1 — Mapa de habitaciones en tiempo real (Semana 13 Día 2) */
         .mapa-habitaciones-panel {
             background: #fff; border: 1px solid #C8E6C9; border-radius: 8px;
@@ -331,6 +353,26 @@ extract(obtenerDatosDashboard($conexion));
         </div>
     </div>
 
+    <div class="proyeccion-panel">
+        <h3>Ocupación proyectada (próximos 7 días)</h3>
+        <p class="subtitulo">
+            % de las <?= (int)$totalHabitacionesActivas ?> habitaciones activas con una reserva vigente
+            (Pendiente, Confirmada o Activa) para cada día — Ajuste Semana 22 (Actividad XIII).
+        </p>
+        <div class="proyeccion-grid" id="proyeccion-grid">
+            <?php foreach ($ocupacionProyectada7Dias as $dia): ?>
+                <div class="proyeccion-dia">
+                    <div class="etiqueta"><?= htmlspecialchars($dia['etiqueta']) ?></div>
+                    <div class="barra-vertical">
+                        <div class="barra-vertical-relleno" style="height: <?= min(100, $dia['pctOcupacion']) ?>%;"></div>
+                    </div>
+                    <div class="pct"><?= (int)$dia['pctOcupacion'] ?>%</div>
+                    <div class="detalle"><?= (int)$dia['habitacionesOcupadas'] ?>/<?= (int)$totalHabitacionesActivas ?> hab.</div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <div class="fila-widget3">
         <div class="stat-panel">
             <p class="stat-titulo">Caja del día</p>
@@ -451,6 +493,21 @@ function actualizarOcupacion(filas) {
     `).join('');
 }
 
+// Ajuste Semana 22 (Actividad XIII) — refresca la proyección de ocupación
+// a 7 días junto con el resto de widgets, cada 30 segundos.
+function actualizarProyeccion(d) {
+    document.getElementById('proyeccion-grid').innerHTML = d.ocupacionProyectada7Dias.map(dia => `
+        <div class="proyeccion-dia">
+            <div class="etiqueta">${escaparHtml(dia.etiqueta)}</div>
+            <div class="barra-vertical">
+                <div class="barra-vertical-relleno" style="height: ${Math.min(100, parseFloat(dia.pctOcupacion))}%;"></div>
+            </div>
+            <div class="pct">${parseInt(dia.pctOcupacion, 10)}%</div>
+            <div class="detalle">${parseInt(dia.habitacionesOcupadas, 10)}/${parseInt(d.totalHabitacionesActivas, 10)} hab.</div>
+        </div>
+    `).join('');
+}
+
 function actualizarWidget3(d) {
     document.getElementById('widget3-caja-h2').textContent =
         '$' + Number(d.totalCajaHoy).toLocaleString('es-CO', { maximumFractionDigits: 0 });
@@ -487,6 +544,7 @@ async function actualizarDashboard() {
         actualizarMapaHabitaciones(datos.mapaHabitaciones);
         actualizarAlertas(datos);
         actualizarOcupacion(datos.ocupacionPorTipo);
+        actualizarProyeccion(datos);
         actualizarWidget3(datos);
         marcarUltimaActualizacion(true);
     } catch (error) {

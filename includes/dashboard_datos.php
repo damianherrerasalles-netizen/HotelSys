@@ -114,6 +114,50 @@ function obtenerDatosDashboard(PDO $conexion): array {
     );
     $totalIngresosMes = (float) $stmtIngresosMes->fetch(PDO::FETCH_ASSOC)['total_mes'];
 
+    // Ajuste Semana 22 (Actividad XIII, confirmado en validación Semana 21
+    // Día 2-3): KPI de ocupación proyectada a 7 días, para anticipar los
+    // días de mayor demanda sin revisar el calendario de Reservas día por
+    // día. Usa el mismo criterio de "habitación ocupada" que ya aplica la
+    // validación de solapamiento en reserva_procesar.php: toda reserva que
+    // no esté Cancelada ni Finalizada bloquea esas fechas (incluye
+    // Pendiente, Confirmada y Activa).
+    $diasSemanaEs = [1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 7 => 'Dom'];
+
+    $totalHabitacionesActivas = (int) $conexion->query(
+        "SELECT COUNT(*) AS total FROM habitaciones WHERE activa = 1"
+    )->fetch(PDO::FETCH_ASSOC)['total'];
+
+    // Nota: no se puede reutilizar el mismo parámetro nombrado (:dia) dos
+    // veces en la misma consulta — con PDO::ATTR_EMULATE_PREPARES en false
+    // (config/db.php), el driver nativo de MySQL lo rechaza con "Invalid
+    // parameter number". Se usan dos marcadores distintos con el mismo valor.
+    $stmtOcupacionDia = $conexion->prepare(
+        "SELECT COUNT(DISTINCT id_habitacion) AS total
+         FROM reservas
+         WHERE estado NOT IN ('Cancelada', 'Finalizada')
+           AND fecha_entrada <= :dia1
+           AND fecha_salida > :dia2"
+    );
+
+    $ocupacionProyectada7Dias = [];
+    for ($i = 0; $i < 7; $i++) {
+        $diaObj = (new DateTime('today'))->modify("+{$i} day");
+        $dia = $diaObj->format('Y-m-d');
+
+        $stmtOcupacionDia->execute([':dia1' => $dia, ':dia2' => $dia]);
+        $habitacionesOcupadas = (int) $stmtOcupacionDia->fetch(PDO::FETCH_ASSOC)['total'];
+        $pctOcupacion = $totalHabitacionesActivas > 0
+            ? round($habitacionesOcupadas / $totalHabitacionesActivas * 100)
+            : 0;
+
+        $ocupacionProyectada7Dias[] = [
+            'fecha'                => $dia,
+            'etiqueta'             => $diasSemanaEs[(int) $diaObj->format('N')] . ' ' . $diaObj->format('d/m'),
+            'habitacionesOcupadas' => $habitacionesOcupadas,
+            'pctOcupacion'         => $pctOcupacion,
+        ];
+    }
+
     return [
         'ocupacionPorTipo'             => $ocupacionPorTipo,
         'mapaHabitaciones'             => $mapaHabitaciones,
@@ -129,5 +173,7 @@ function obtenerDatosDashboard(PDO $conexion): array {
         'totalTareasCompletadasHoy'    => $totalTareasCompletadasHoy,
         'pctTareasCompletadasHoy'      => $pctTareasCompletadasHoy,
         'totalIngresosMes'             => $totalIngresosMes,
+        'totalHabitacionesActivas'     => $totalHabitacionesActivas,
+        'ocupacionProyectada7Dias'     => $ocupacionProyectada7Dias,
     ];
 }

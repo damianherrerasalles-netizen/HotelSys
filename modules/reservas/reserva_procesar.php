@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../../config/db.php'; // Define BASE_URL y getConexion()
 require_once __DIR__ . '/../../includes/check_auth.php';
+require_once __DIR__ . '/../../includes/facturacion_helpers.php'; // resolverIdPersonalDesdeSesion()
 
 $pdo = getConexion();
 
@@ -96,19 +97,28 @@ $num_noches = (int)$intervalo->days;
 $precio_noche_aplicado = (float)$habitacion['precio_noche'];
 $total_calculado = $num_noches * $precio_noche_aplicado;
 
-// --- 5. Insertar la reserva (prepared statement, sin id_personal por ahora) ---
+// --- 5. Insertar la reserva (prepared statement) ---
+// Ajuste Semana 22 (Actividad XIII, confirmado en validación Semana 21 Día
+// 2-3): poblar id_personal con quien registró la reserva, reutilizando el
+// resolver ya creado en la Semana 15 Día 2 para la factura automática
+// (includes/facturacion_helpers.php) — resuelve por email entre `usuarios`
+// y `personal`. Devuelve null si no hay match (por ejemplo, un usuario de
+// sistema sin ficha en `personal`); la columna ya admite NULL.
 try {
+    $idPersonal = resolverIdPersonalDesdeSesion($pdo, (int) $_SESSION['usuario_id']);
+
     $stmtInsert = $pdo->prepare(
         "INSERT INTO reservas
-            (id_cliente, id_habitacion, fecha_entrada, fecha_salida, num_personas,
+            (id_cliente, id_habitacion, id_personal, fecha_entrada, fecha_salida, num_personas,
              estado, canal_origen, precio_noche_aplicado, total_calculado, observaciones)
          VALUES
-            (:id_cliente, :id_habitacion, :fecha_entrada, :fecha_salida, :num_personas,
+            (:id_cliente, :id_habitacion, :id_personal, :fecha_entrada, :fecha_salida, :num_personas,
              'Pendiente', :canal_origen, :precio_noche_aplicado, :total_calculado, :observaciones)"
     );
     $stmtInsert->execute([
         ':id_cliente'             => $id_cliente,
         ':id_habitacion'          => $id_habitacion,
+        ':id_personal'            => $idPersonal,
         ':fecha_entrada'          => $fecha_entrada,
         ':fecha_salida'           => $fecha_salida,
         ':num_personas'           => $num_personas,

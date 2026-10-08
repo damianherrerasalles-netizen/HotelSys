@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../includes/check_auth.php';
 // El require_once de arriba ya valida que exista sesión activa
+require_once __DIR__ . '/../../includes/facturacion_helpers.php'; // resolverIdPersonalDesdeSesion()
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -88,13 +89,47 @@ try {
         exit();
     }
 
+    // Ajuste Semana 22 (Actividad XIII, confirmado en validación Semana 21
+    // Día 2-3): registrar quién y cuándo hizo el último cambio de estado,
+    // para poder identificar y corregir un cambio hecho por error.
     $update = $conexion->prepare(
-        "UPDATE habitaciones SET estado = :nuevo_estado WHERE id_habitacion = :id"
+        "UPDATE habitaciones
+         SET estado = :nuevo_estado, actualizado_por = :actualizado_por, fecha_actualizacion = NOW()
+         WHERE id_habitacion = :id"
     );
     $update->execute([
         ':nuevo_estado' => $nuevoEstado,
+        ':actualizado_por' => $_SESSION['nombre'] ?? 'Administrador',
         ':id' => $idHabitacion
     ]);
+
+    // Semana 17 Día 2 — Actividad XI: este botón rápido es un segundo camino
+    // para iniciar/cerrar un mantenimiento, además del formulario nuevo
+    // (views/mantenimiento_form.php). Para que el reporte de costo de
+    // mantenimiento (Día 5) no tenga huecos, este atajo también deja un
+    // registro en `mantenimientos` — sin motivo detallado ni costo, que el
+    // administrador puede completar después editando directamente ese
+    // registro desde el listado de Mantenimiento si lo necesita.
+    if ($nuevoEstado === 'Mantenimiento') {
+        $idPersonal = isset($_SESSION['usuario_id'])
+            ? resolverIdPersonalDesdeSesion($conexion, (int) $_SESSION['usuario_id'])
+            : null;
+
+        $conexion->prepare(
+            "INSERT INTO mantenimientos (id_habitacion, id_personal, motivo, fecha_inicio, costo)
+             VALUES (:id_habitacion, :id_personal, 'Mantenimiento rápido (registrado desde Habitaciones)', CURDATE(), 0)"
+        )->execute([
+            ':id_habitacion' => $idHabitacion,
+            ':id_personal'   => $idPersonal,
+        ]);
+    } elseif ($nuevoEstado === 'Disponible') {
+        // Cierra cualquier registro de mantenimiento todavía abierto para
+        // esta habitación (normalmente habrá como mucho uno).
+        $conexion->prepare(
+            "UPDATE mantenimientos SET fecha_fin = CURDATE()
+             WHERE id_habitacion = :id AND fecha_fin IS NULL"
+        )->execute([':id' => $idHabitacion]);
+    }
 
     $conexion->commit();
 

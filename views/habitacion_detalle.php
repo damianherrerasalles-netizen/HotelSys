@@ -197,6 +197,19 @@ foreach ($amenidadesLabels as $campo => $label) {
                <p style="font-size:14px; color:#444;"><?= nl2br(htmlspecialchars($habitacion['descripcion'])) ?></p>
             </div>
         <?php endif; ?>
+        <?php if (!empty($habitacion['actualizado_por']) && !empty($habitacion['fecha_actualizacion'])): ?>
+            <!-- Ajuste Semana 22 (Actividad XIII, confirmado en validación Semana 21
+                 Día 2-3): mostrar quién y cuándo hizo el último cambio de estado,
+                 para poder identificar y corregir un cambio hecho por error. Se
+                 oculta cuando aún no hay dato (filas previas a este ajuste). -->
+            <div style="margin-top: 14px;">
+               <p style="font-size:12px; color:#757575; margin-bottom:4px;">Último cambio de estado</p>
+               <p style="font-size:14px; color:#444;">
+                   <?= htmlspecialchars($habitacion['actualizado_por']) ?>
+                   — <?= htmlspecialchars(date('d/m/Y H:i', strtotime($habitacion['fecha_actualizacion']))) ?>
+               </p>
+            </div>
+        <?php endif; ?>
     </div>
 
     <?php if (count($historialMantenimientos) > 0): ?>
